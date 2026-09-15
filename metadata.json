@@ -1,0 +1,6 @@
+{
+  "name": "AlphaGenerator - TempVC Bot",
+  "description": "Discord Temporary Voice Channel bot and interactive management dashboard for Tap-to-Create voice channels, permission locks, renaming, and staff alerts.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
