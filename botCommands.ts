@@ -124,61 +124,77 @@ export const COMMANDS_REGISTRY: CommandDef[] = [
   // ==================== 2. ISLAMIC COMMANDS (4-12) ====================
   {
     name: 'quran',
-    description: 'آية قرآنية كريمة مريحة للقلب مع التذكير',
+    description: 'آية قرآنية كريمة مريحة للقلب مع التذكير وإمبد راقٍ',
     category: 'islamic',
     executeSlash: async (interaction) => {
       const ayah = ISLAMIC_REMINDERS[Math.floor(Math.random() * ISLAMIC_REMINDERS.length)];
       const embed = new EmbedBuilder()
-        .setColor(0x10b981)
-        .setTitle('📖 تذكرة من كتاب الله وسنة رسوله')
-        .setDescription(ayah)
-        .setFooter({ text: 'AlphaGenerator • ذكر فإن الذكرى تنفع المؤمنين' });
+        .setColor(0x059669)
+        .setTitle('📖 تذكرة من كتاب الله وسنة رسوله ﷺ')
+        .setDescription(`> 💫 **${ayah}**\n\n*«أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ»*`)
+        .setFooter({ text: 'AlphaGenerator Quran Hub • ذكر فإن الذكرى تنفع المؤمنين' })
+        .setTimestamp();
       await interaction.reply({ embeds: [embed] });
     },
     executeText: async (message) => {
       const ayah = ISLAMIC_REMINDERS[Math.floor(Math.random() * ISLAMIC_REMINDERS.length)];
       const embed = new EmbedBuilder()
-        .setColor(0x10b981)
-        .setTitle('📖 تذكرة من كتاب الله وسنة رسوله')
-        .setDescription(ayah)
-        .setFooter({ text: 'AlphaGenerator • ذكر فإن الذكرى تنفع المؤمنين' });
+        .setColor(0x059669)
+        .setTitle('📖 تذكرة من كتاب الله وسنة رسوله ﷺ')
+        .setDescription(`> 💫 **${ayah}**\n\n*«أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ»*`)
+        .setFooter({ text: 'AlphaGenerator Quran Hub • ذكر فإن الذكرى تنفع المؤمنين' })
+        .setTimestamp();
       await message.reply({ embeds: [embed] });
     },
   },
   {
     name: 'hadith',
-    description: 'حديث نبوي شريف صحيح',
+    description: 'حديث نبوي شريف صحيح في إمبد مميز',
     category: 'islamic',
     executeSlash: async (interaction) => {
       const hadith = ISLAMIC_REMINDERS.filter((s) => s.includes('رسول الله'))[Math.floor(Math.random() * 4)] || ISLAMIC_REMINDERS[0];
       const embed = new EmbedBuilder()
-        .setColor(0x059669)
+        .setColor(0x10b981)
         .setTitle('🌿 حديث نبوي شريف')
-        .setDescription(hadith)
-        .setFooter({ text: 'اللهم صل وسلم على نبينا محمد' });
+        .setDescription(`> ✨ **${hadith}**\n\n*صلّوا على الحبيب المصطفى ﷺ*`)
+        .setFooter({ text: 'AlphaGenerator • اللهم صل وسلم على نبينا محمد' })
+        .setTimestamp();
       await interaction.reply({ embeds: [embed] });
     },
     executeText: async (message) => {
       const hadith = ISLAMIC_REMINDERS.filter((s) => s.includes('رسول الله'))[Math.floor(Math.random() * 4)] || ISLAMIC_REMINDERS[0];
       const embed = new EmbedBuilder()
-        .setColor(0x059669)
+        .setColor(0x10b981)
         .setTitle('🌿 حديث نبوي شريف')
-        .setDescription(hadith)
-        .setFooter({ text: 'اللهم صل وسلم على نبينا محمد' });
+        .setDescription(`> ✨ **${hadith}**\n\n*صلّوا على الحبيب المصطفى ﷺ*`)
+        .setFooter({ text: 'AlphaGenerator • اللهم صل وسلم على نبينا محمد' })
+        .setTimestamp();
       await message.reply({ embeds: [embed] });
     },
   },
   {
     name: 'dhikr',
-    description: 'ذكر واستغفار لكسب الأجر والثواب',
+    description: 'ذكر واستغفار لكسب الأجر والثواب في إمبد فاخر',
     category: 'islamic',
     executeSlash: async (interaction) => {
       const d = ADHKAR[Math.floor(Math.random() * ADHKAR.length)];
-      await interaction.reply({ content: `✨ **عطّر لسانك بذكر الله:**\n\n> 📿 **« ${d} »**\n\n*تقبل الله منا ومنكم صالح الأعمال.*` });
+      const embed = new EmbedBuilder()
+        .setColor(0x0ea5e9)
+        .setTitle('📿 رطّب لسانك بذكر الله تعالى')
+        .setDescription(`> 💫 **« ${d} »**\n\n*تقبل الله منا ومنكم صالح الأعمال والطاعات.*`)
+        .setFooter({ text: 'AlphaGenerator • سبحان الله وبحمده عدد خلقه ورضا نفسه' })
+        .setTimestamp();
+      await interaction.reply({ embeds: [embed] });
     },
     executeText: async (message) => {
       const d = ADHKAR[Math.floor(Math.random() * ADHKAR.length)];
-      await message.reply(`✨ **عطّر لسانك بذكر الله:**\n\n> 📿 **« ${d} »**\n\n*تقبل الله منا ومنكم صالح الأعمال.*`);
+      const embed = new EmbedBuilder()
+        .setColor(0x0ea5e9)
+        .setTitle('📿 رطّب لسانك بذكر الله تعالى')
+        .setDescription(`> 💫 **« ${d} »**\n\n*تقبل الله منا ومنكم صالح الأعمال والطاعات.*`)
+        .setFooter({ text: 'AlphaGenerator • سبحان الله وبحمده عدد خلقه ورضا نفسه' })
+        .setTimestamp();
+      await message.reply({ embeds: [embed] });
     },
   },
   {
@@ -195,7 +211,8 @@ export const COMMANDS_REGISTRY: CommandDef[] = [
           `🌅 **الفجر** • ☀️ **الظهر** • 🌤️ **العصر** • 🌇 **المغرب** • 🌌 **العشاء**\n\n` +
           `*«أحب الأعمال إلى الله: الصلاة لوقتها ثم بر الوالدين»*`
         )
-        .setFooter({ text: 'أقم صلاتك تحلو حياتك' });
+        .setFooter({ text: 'أقم صلاتك تحلو حياتك' })
+        .setTimestamp();
       await interaction.reply({ embeds: [embed] });
     },
     executeText: async (message) => {
@@ -208,13 +225,14 @@ export const COMMANDS_REGISTRY: CommandDef[] = [
           `🌅 **الفجر** • ☀️ **الظهر** • 🌤️ **العصر** • 🌇 **المغرب** • 🌌 **العشاء**\n\n` +
           `*«أحب الأعمال إلى الله: الصلاة لوقتها ثم بر الوالدين»*`
         )
-        .setFooter({ text: 'أقم صلاتك تحلو حياتك' });
+        .setFooter({ text: 'أقم صلاتك تحلو حياتك' })
+        .setTimestamp();
       await message.reply({ embeds: [embed] });
     },
   },
   {
     name: 'dua',
-    description: 'دعاء مأثور جامع لخيري الدنيا والآخرة',
+    description: 'دعاء مأثور جامع لخيري الدنيا والآخرة في إمبد أنيق',
     category: 'islamic',
     executeSlash: async (interaction) => {
       const duas = [
@@ -225,7 +243,13 @@ export const COMMANDS_REGISTRY: CommandDef[] = [
         '«اللَّهُمَّ أَعِنِّي عَلَى ذِكْرِكَ وَشُكْرِكَ وَحُسْنِ عِبَادَتِكَ»',
       ];
       const selected = duas[Math.floor(Math.random() * duas.length)];
-      await interaction.reply({ content: `🤲 **دعاء مبارك:**\n\n> 💫 **${selected}**\n\n*آمين يا رب العالمين.*` });
+      const embed = new EmbedBuilder()
+        .setColor(0x8b5cf6)
+        .setTitle('🤲 دعاء مبارك ومأثور')
+        .setDescription(`> 💫 **${selected}**\n\n*اللهم استجب وتقبل منا يا رب العالمين.*`)
+        .setFooter({ text: 'AlphaGenerator • وإذا سألك عبادي عني فإني قريب' })
+        .setTimestamp();
+      await interaction.reply({ embeds: [embed] });
     },
     executeText: async (message) => {
       const duas = [
@@ -236,94 +260,141 @@ export const COMMANDS_REGISTRY: CommandDef[] = [
         '«اللَّهُمَّ أَعِنِّي عَلَى ذِكْرِكَ وَشُكْرِكَ وَحُسْنِ عِبَادَتِكَ»',
       ];
       const selected = duas[Math.floor(Math.random() * duas.length)];
-      await message.reply(`🤲 **دعاء مبارك:**\n\n> 💫 **${selected}**\n\n*آمين يا رب العالمين.*`);
+      const embed = new EmbedBuilder()
+        .setColor(0x8b5cf6)
+        .setTitle('🤲 دعاء مبارك ومأثور')
+        .setDescription(`> 💫 **${selected}**\n\n*اللهم استجب وتقبل منا يا رب العالمين.*`)
+        .setFooter({ text: 'AlphaGenerator • وإذا سألك عبادي عني فإني قريب' })
+        .setTimestamp();
+      await message.reply({ embeds: [embed] });
     },
   },
   {
     name: 'istighfar',
-    description: 'فضل الاستغفار وصيغته النبوية',
+    description: 'فضل سيد الاستغفار وصيغته النبوية في إمبد',
     category: 'islamic',
     executeSlash: async (interaction) => {
-      await interaction.reply({
-        content: `🌱 **سيد الاستغفار:**\n> «اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلَّا أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ، وَأَنَا عَلَى عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ، أَعُوذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ، أَبُوءُ لَكَ بِنِعْمَتِكَ عَلَيَّ، وَأَبُوءُ لَكَ بِذَنْبِي فَاغْفِرْ لِي فَإِنَّهُ لَا يَغْفِرُ الذُّنُوبَ إِلَّا أَنْتَ»`,
-      });
+      const embed = new EmbedBuilder()
+        .setColor(0x059669)
+        .setTitle('🌱 سَيِّدُ الاِسْتِغْفَارِ')
+        .setDescription(
+          `> «**اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلَّا أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ، وَأَنَا عَلَى عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ، أَعُوذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ، أَبُوءُ لَكَ بِنِعْمَتِكَ عَلَيَّ، وَأَبُوءُ لَكَ بِذَنْبِي فَاغْفِرْ لِي فَإِنَّهُ لَا يَغْفِرُ الذُّنُوبَ إِلَّا أَنْتَ**»\n\n` +
+          `*قال النبي ﷺ: «من قالها موقناً بها حين يمسي فمات من ليلته دخل الجنة، وكذلك حين يصبح».*`
+        )
+        .setFooter({ text: 'AlphaGenerator • أستغفر الله العظيم وأتوب إليه' })
+        .setTimestamp();
+      await interaction.reply({ embeds: [embed] });
     },
     executeText: async (message) => {
-      await message.reply({
-        content: `🌱 **سيد الاستغفار:**\n> «اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلَّا أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ، وَأَنَا عَلَى عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ، أَعُوذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ، أَبُوءُ لَكَ بِنِعْمَتِكَ عَلَيَّ، وَأَبُوءُ لَكَ بِذَنْبِي فَاغْفِرْ لِي فَإِنَّهُ لَا يَغْفِرُ الذُّنُوبَ إِلَّا أَنْتَ»`,
-      });
+      const embed = new EmbedBuilder()
+        .setColor(0x059669)
+        .setTitle('🌱 سَيِّدُ الاِسْتِغْفَارِ')
+        .setDescription(
+          `> «**اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلَّا أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ، وَأَنَا عَلَى عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ، أَعُوذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ، أَبُوءُ لَكَ بِنِعْمَتِكَ عَلَيَّ، وَأَبُوءُ لَكَ بِذَنْبِي فَاغْفِرْ لِي فَإِنَّهُ لَا يَغْفِرُ الذُّنُوبَ إِلَّا أَنْتَ**»\n\n` +
+          `*قال النبي ﷺ: «من قالها موقناً بها حين يمسي فمات من ليلته دخل الجنة، وكذلك حين يصبح».*`
+        )
+        .setFooter({ text: 'AlphaGenerator • أستغفر الله العظيم وأتوب إليه' })
+        .setTimestamp();
+      await message.reply({ embeds: [embed] });
     },
   },
   {
     name: 'salat',
-    description: 'فضل الصلاة على النبي ﷺ',
+    description: 'فضل الصلاة على النبي ﷺ في إمبد راقٍ',
     category: 'islamic',
     executeSlash: async (interaction) => {
-      await interaction.reply({
-        content: `🌺 **قال النبي ﷺ:** «مَنْ صَلَّى عَلَيَّ صَلَاةً صَلَّى اللَّهُ عَلَيْهِ بِهَا عَشْرًا»\n\n> **اللَّهُمَّ صَلِّ وَسَلِّمْ وَبَارِكْ عَلَى نَبِيِّنَا مُحَمَّدٍ وَعَلَى آلِهِ وَصَحْبِهِ أَجْمَعِينَ**`,
-      });
+      const embed = new EmbedBuilder()
+        .setColor(0xec4899)
+        .setTitle('🌺 الصَّلَاةُ عَلَى النَّبِيِّ ﷺ')
+        .setDescription(
+          `قال رسول الله ﷺ: «**مَنْ صَلَّى عَلَيَّ صَلَاةً صَلَّى اللَّهُ عَلَيْهِ بِهَا عَشْرًا**»\n\n` +
+          `> 💫 **اللَّهُمَّ صَلِّ وَسَلِّمْ وَبَارِكْ عَلَى نَبِيِّنَا مُحَمَّدٍ وَعَلَى آلِهِ وَصَحْبِهِ أَجْمَعِينَ**`
+        )
+        .setFooter({ text: 'AlphaGenerator • اللهم صل وسلم وبارك على سيدنا محمد' })
+        .setTimestamp();
+      await interaction.reply({ embeds: [embed] });
     },
     executeText: async (message) => {
-      await message.reply(
-        `🌺 **قال النبي ﷺ:** «مَنْ صَلَّى عَلَيَّ صَلَاةً صَلَّى اللَّهُ عَلَيْهِ بِهَا عَشْرًا»\n\n> **اللَّهُمَّ صَلِّ وَسَلِّمْ وَبَارِكْ عَلَى نَبِيِّنَا مُحَمَّدٍ وَعَلَى آلِهِ وَصَحْبِهِ أَجْمَعِينَ**`
-      );
+      const embed = new EmbedBuilder()
+        .setColor(0xec4899)
+        .setTitle('🌺 الصَّلَاةُ عَلَى النَّبِيِّ ﷺ')
+        .setDescription(
+          `قال رسول الله ﷺ: «**مَنْ صَلَّى عَلَيَّ صَلَاةً صَلَّى اللَّهُ عَلَيْهِ بِهَا عَشْرًا**»\n\n` +
+          `> 💫 **اللَّهُمَّ صَلِّ وَسَلِّمْ وَبَارِكْ عَلَى نَبِيِّنَا مُحَمَّدٍ وَعَلَى آلِهِ وَصَحْبِهِ أَجْمَعِينَ**`
+        )
+        .setFooter({ text: 'AlphaGenerator • اللهم صل وسلم وبارك على سيدنا محمد' })
+        .setTimestamp();
+      await message.reply({ embeds: [embed] });
     },
   },
   {
     name: 'friday',
-    description: 'سنن وفضائل يوم الجمعة المبارك',
+    description: 'سنن وفضائل يوم الجمعة المبارك في إمبد منظم',
     category: 'islamic',
     executeSlash: async (interaction) => {
-      await interaction.reply({
-        content: `🕌 **سنن يوم الجمعة المبارك:**\n` +
-          `1️⃣ الاغتسال والتطيب ولبس أحسن الثياب\n` +
-          `2️⃣ التبكير إلى المسجد لأداء صلاة الجمعة\n` +
-          `3️⃣ قراءة سورة الكهف (نور ما بين الجمعتين)\n` +
-          `4️⃣ الإكثار من الصلاة على النبي ﷺ\n` +
-          `5️⃣ تحري ساعة الإجابة في آخر النهار قبل المغرب.`,
-      });
+      const embed = new EmbedBuilder()
+        .setColor(0x059669)
+        .setTitle('🕌 سنن وفضائل يوم الجمعة المبارك')
+        .setDescription(
+          `1️⃣ **الاغتسال والتطيب** ولبس أحسن الثياب\n` +
+          `2️⃣ **التبكير إلى المسجد** لأداء صلاة الجمعة وسماع الخطبة\n` +
+          `3️⃣ **قراءة سورة الكهف** (نور ما بين الجمعتين)\n` +
+          `4️⃣ **الإكثار من الصلاة على النبي ﷺ**\n` +
+          `5️⃣ **تحري ساعة الإجابة** في آخر نهار الجمعة قبل الغروب.`
+        )
+        .setFooter({ text: 'AlphaGenerator • جمعة مباركة وطيبة عليكم جميعاً' })
+        .setTimestamp();
+      await interaction.reply({ embeds: [embed] });
     },
     executeText: async (message) => {
-      await message.reply(
-        `🕌 **سنن يوم الجمعة المبارك:**\n` +
-        `1️⃣ الاغتسال والتطيب ولبس أحسن الثياب\n` +
-        `2️⃣ التبكير إلى المسجد لأداء صلاة الجمعة\n` +
-        `3️⃣ قراءة سورة الكهف (نور ما بين الجمعتين)\n` +
-        `4️⃣ الإكثار من الصلاة على النبي ﷺ\n` +
-        `5️⃣ تحري ساعة الإجابة في آخر النهار قبل المغرب.`
-      );
+      const embed = new EmbedBuilder()
+        .setColor(0x059669)
+        .setTitle('🕌 سنن وفضائل يوم الجمعة المبارك')
+        .setDescription(
+          `1️⃣ **الاغتسال والتطيب** ولبس أحسن الثياب\n` +
+          `2️⃣ **التبكير إلى المسجد** لأداء صلاة الجمعة وسماع الخطبة\n` +
+          `3️⃣ **قراءة سورة الكهف** (نور ما بين الجمعتين)\n` +
+          `4️⃣ **الإكثار من الصلاة على النبي ﷺ**\n` +
+          `5️⃣ **تحري ساعة الإجابة** في آخر نهار الجمعة قبل الغروب.`
+        )
+        .setFooter({ text: 'AlphaGenerator • جمعة مباركة وطيبة عليكم جميعاً' })
+        .setTimestamp();
+      await message.reply({ embeds: [embed] });
     },
   },
   {
     name: 'kahf',
-    description: 'تذكير وفضل قراءة سورة الكهف',
+    description: 'تذكير وفضل قراءة سورة الكهف ورابطها',
     category: 'islamic',
     executeSlash: async (interaction) => {
-      await interaction.reply({
-        content: `📖 قال رسول الله ﷺ: «مَنْ قَرَأَ سُورَةَ الْكَهْفِ فِي يَوْمِ الْجُمُعَةِ أَضَاءَ لَهُ مِنَ النُّورِ مَا بَيْنَ الْجُمُعَتَيْنِ»\n\nرابط لقراءتها إلكترونياً: https://quran.com/18`,
-      });
+      const embed = new EmbedBuilder()
+        .setColor(0x10b981)
+        .setTitle('📖 سُورَةُ الكَهْفِ • نُورٌ مَا بَيْنَ الجُمُعَتَيْنِ')
+        .setDescription(
+          `قال رسول الله ﷺ:\n` +
+          `«**مَنْ قَرَأَ سُورَةَ الْكَهْفِ فِي يَوْمِ الْجُمُعَةِ أَضَاءَ لَهُ مِنَ النُّورِ مَا بَيْنَ الْجُمُعَتَيْنِ**»\n\n` +
+          `🔗 **[اضغط هنا لقراءة سورة الكهف كاملةً إلكترونياً](https://quran.com/18)**`
+        )
+        .setFooter({ text: 'AlphaGenerator Quran Hub' })
+        .setTimestamp();
+      await interaction.reply({ embeds: [embed] });
     },
     executeText: async (message) => {
-      await message.reply(
-        `📖 قال رسول الله ﷺ: «مَنْ قَرَأَ سُورَةَ الْكَهْفِ فِي يَوْمِ الْجُمُعَةِ أَضَاءَ لَهُ مِنَ النُّورِ مَا بَيْنَ الْجُمُعَتَيْنِ»\n\nرابط لقراءتها إلكترونياً: https://quran.com/18`
-      );
+      const embed = new EmbedBuilder()
+        .setColor(0x10b981)
+        .setTitle('📖 سُورَةُ الكَهْفِ • نُورٌ مَا بَيْنَ الجُمُعَتَيْنِ')
+        .setDescription(
+          `قال رسول الله ﷺ:\n` +
+          `«**مَنْ قَرَأَ سُورَةَ الْكَهْفِ فِي يَوْمِ الْجُمُعَةِ أَضَاءَ لَهُ مِنَ النُّورِ مَا بَيْنَ الْجُمُعَتَيْنِ**»\n\n` +
+          `🔗 **[اضغط هنا لقراءة سورة الكهف كاملةً إلكترونياً](https://quran.com/18)**`
+        )
+        .setFooter({ text: 'AlphaGenerator Quran Hub' })
+        .setTimestamp();
+      await message.reply({ embeds: [embed] });
     },
   },
 
-  // ==================== 3. CULTURAL & PROVERBS (13-16) ====================
-  {
-    name: 'amthal',
-    description: 'مثل وحكمة شعبية جزائرية قديمة أصيلة',
-    category: 'fun',
-    executeSlash: async (interaction) => {
-      const p = ALGERIAN_PROVERBS[Math.floor(Math.random() * ALGERIAN_PROVERBS.length)];
-      await interaction.reply({ content: `🇩🇿 **قالوا ناس زمان في الجزائر:**\n\n> 📜 ${p}` });
-    },
-    executeText: async (message) => {
-      const p = ALGERIAN_PROVERBS[Math.floor(Math.random() * ALGERIAN_PROVERBS.length)];
-      await message.reply(`🇩🇿 **قالوا ناس زمان في الجزائر:**\n\n> 📜 ${p}`);
-    },
-  },
+  // ==================== 3. CULTURAL & HERITAGE (13-15) ====================
   {
     name: 'dz',
     description: 'معلومات تاريخية أو ثقافية عن الجزائر الحبيبة',
@@ -517,6 +588,262 @@ export const COMMANDS_REGISTRY: CommandDef[] = [
         .setDescription(`تم توجيه إنذار رسمي إلى <@${target.id}>\n\n**السبب:** ${reason}\n**المشرف:** <@${message.author.id}>`);
       await message.channel.send({ embeds: [embed] });
       await target.send(`⚠️ لقد تلقيت إنذاراً في سيرفر **${message.guild!.name}** بسبب: ${reason}`).catch(() => {});
+    },
+  },
+  {
+    name: 'jail',
+    description: '🔒 سجن عضو وإعطاؤه رول الجايل ونقله لفويس الجايل مع الميوت وإرسال السبب في روم مخصص',
+    category: 'moderation',
+    options: [
+      { name: 'user', description: 'العضو المراد سجنه', type: 6, required: true },
+      { name: 'reason', description: 'سبب السجن', type: 3, required: true },
+    ],
+    executeSlash: async (interaction, ctx) => {
+      const JAIL_ROLE_ID = '1548527902285627563';
+      const REASON_CHANNEL_ID = '1548528308579340349';
+      const JAIL_VC_ID = '1548526279924523139';
+
+      const member = interaction.member as GuildMember;
+      const isOwner = interaction.guild!.ownerId === member.id;
+      const isStaff = member.permissions.has(PermissionFlagsBits.ModerateMembers) ||
+        member.permissions.has(PermissionFlagsBits.Administrator) ||
+        member.roles.cache.some((r) => ctx?.config?.highStaffRoleIds?.includes(r.id));
+
+      if (!isOwner && !isStaff) {
+        return interaction.reply({ content: '❌ لا تملك صلاحيات المشرفين/السطاف لاستخدام أمر السجن!', ephemeral: true });
+      }
+
+      const targetUser = interaction.options.getUser('user', true);
+      const reason = interaction.options.getString('reason', true);
+      const guild = interaction.guild!;
+      const targetMember = guild.members.cache.get(targetUser.id) || await guild.members.fetch(targetUser.id).catch(() => null);
+
+      if (!targetMember) {
+        return interaction.reply({ content: '❌ لم يتم العثور على العضو في السيرفر!', ephemeral: true });
+      }
+
+      if (targetMember.permissions.has(PermissionFlagsBits.Administrator)) {
+        return interaction.reply({ content: '❌ لا يمكنك سجن إداري بالسيرفر!', ephemeral: true });
+      }
+
+      // Add Jail Role
+      try {
+        await targetMember.roles.add(JAIL_ROLE_ID);
+      } catch (roleErr: any) {
+        console.error('Failed to add jail role:', roleErr);
+      }
+
+      // Voice Check: If in VC, move to Jail VC and server mute
+      let voiceMoved = false;
+      if (targetMember.voice?.channelId) {
+        try {
+          await targetMember.voice.setChannel(JAIL_VC_ID);
+          await targetMember.voice.setMute(true, `Jailed: ${reason}`);
+          voiceMoved = true;
+        } catch (vcErr) {
+          console.error('Failed to move/mute user in jail VC:', vcErr);
+        }
+      }
+
+      // Exact Embed Format required:
+      // سطر واحد يجي هكا @user jailed by @user
+      // تحتها: Reason: test
+      const embed = new EmbedBuilder()
+        .setColor(0xff0000)
+        .setDescription(`<@${targetMember.id}> jailed by <@${member.id}>\nReason: ${reason}`);
+
+      // Send to Reason Channel (1548528308579340349)
+      const reasonChannel = guild.channels.cache.get(REASON_CHANNEL_ID) as TextChannel | undefined;
+      if (reasonChannel && reasonChannel.isTextBased()) {
+        await reasonChannel.send({ embeds: [embed] }).catch((err) => console.error('Failed to send in reason channel:', err));
+      }
+
+      await interaction.reply({
+        content: `🔒 **تم سجن العضو <@${targetMember.id}> بنجاح!**` + (voiceMoved ? ` ونقله لفويس الجايل مع السيرفر ميوت.` : ''),
+        embeds: [embed],
+      });
+      ctx?.addLog?.('jail', `تم سجن <@${targetMember.id}> بواسطة <@${member.id}> - السبب: ${reason}`, REASON_CHANNEL_ID, member.id);
+    },
+    executeText: async (message, args, ctx) => {
+      const JAIL_ROLE_ID = '1548527902285627563';
+      const REASON_CHANNEL_ID = '1548528308579340349';
+      const JAIL_VC_ID = '1548526279924523139';
+
+      const isOwner = message.guild!.ownerId === message.author.id;
+      const isStaff = message.member?.permissions.has(PermissionFlagsBits.ModerateMembers) ||
+        message.member?.permissions.has(PermissionFlagsBits.Administrator) ||
+        message.member?.roles.cache.some((r) => ctx?.config?.highStaffRoleIds?.includes(r.id));
+
+      if (!isOwner && !isStaff) {
+        return message.reply('❌ لا تملك صلاحيات المشرفين/السطاف لاستخدام أمر `?jail`!');
+      }
+
+      const targetMember = message.mentions.members?.first() ||
+        (args[0] ? await message.guild!.members.fetch(args[0].replace(/[<@!>]/g, '')).catch(() => null) : null);
+
+      if (!targetMember) {
+        return message.reply('⚠️ يرجى منشن العضو وكتابة السبب. مثال:\n`?jail @user السب في الشات`');
+      }
+
+      if (targetMember.permissions.has(PermissionFlagsBits.Administrator)) {
+        return message.reply('❌ لا يمكنك سجن إداري بالسيرفر!');
+      }
+
+      // Reason extraction: args after the user mention
+      let reason = args.slice(1).join(' ').trim();
+      if (!reason) {
+        reason = 'No reason provided';
+      }
+
+      // Add Jail Role
+      try {
+        await targetMember.roles.add(JAIL_ROLE_ID);
+      } catch (roleErr: any) {
+        console.error('Failed to add jail role:', roleErr);
+      }
+
+      // Voice Check: If in VC, move to Jail VC and server mute
+      let voiceMoved = false;
+      if (targetMember.voice?.channelId) {
+        try {
+          await targetMember.voice.setChannel(JAIL_VC_ID);
+          await targetMember.voice.setMute(true, `Jailed: ${reason}`);
+          voiceMoved = true;
+        } catch (vcErr) {
+          console.error('Failed to move/mute user in jail VC:', vcErr);
+        }
+      }
+
+      // Exact Embed Format required:
+      // سطر واحد يجي هكا @user jailed by @user
+      // تحتها: Reason: test
+      const embed = new EmbedBuilder()
+        .setColor(0xff0000)
+        .setDescription(`<@${targetMember.id}> jailed by <@${message.author.id}>\nReason: ${reason}`);
+
+      // Send to Reason Channel (1548528308579340349)
+      const reasonChannel = message.guild!.channels.cache.get(REASON_CHANNEL_ID) as TextChannel | undefined;
+      if (reasonChannel && reasonChannel.isTextBased()) {
+        await reasonChannel.send({ embeds: [embed] }).catch((err) => console.error('Failed to send in reason channel:', err));
+      }
+
+      await message.reply({
+        content: `🔒 **تم سجن العضو <@${targetMember.id}> بنجاح!**` + (voiceMoved ? ` ونقله لفويس الجايل وسيرفر ميوت.` : ''),
+        embeds: [embed],
+      });
+      ctx?.addLog?.('jail', `تم سجن <@${targetMember.id}> بواسطة <@${message.author.id}> - السبب: ${reason}`, REASON_CHANNEL_ID, message.author.id);
+    },
+  },
+  {
+    name: 'unjail',
+    description: '🔓 فك السجن عن عضو وإزالة رول الجايل وإلغاء الميوت الصوتي',
+    category: 'moderation',
+    options: [
+      { name: 'user', description: 'العضو المراد فك سجنه', type: 6, required: true },
+    ],
+    executeSlash: async (interaction, ctx) => {
+      const JAIL_ROLE_ID = '1548527902285627563';
+      const REASON_CHANNEL_ID = '1548528308579340349';
+
+      const member = interaction.member as GuildMember;
+      const isOwner = interaction.guild!.ownerId === member.id;
+      const isStaff = member.permissions.has(PermissionFlagsBits.ModerateMembers) ||
+        member.permissions.has(PermissionFlagsBits.Administrator) ||
+        member.roles.cache.some((r) => ctx?.config?.highStaffRoleIds?.includes(r.id));
+
+      if (!isOwner && !isStaff) {
+        return interaction.reply({ content: '❌ لا تملك صلاحيات المشرفين/السطاف لاستخدام أمر فك السجن!', ephemeral: true });
+      }
+
+      const targetUser = interaction.options.getUser('user', true);
+      const guild = interaction.guild!;
+      const targetMember = guild.members.cache.get(targetUser.id) || await guild.members.fetch(targetUser.id).catch(() => null);
+
+      if (!targetMember) {
+        return interaction.reply({ content: '❌ لم يتم العثور على العضو في السيرفر!', ephemeral: true });
+      }
+
+      // Remove Jail Role
+      try {
+        await targetMember.roles.remove(JAIL_ROLE_ID);
+      } catch (roleErr: any) {
+        console.error('Failed to remove jail role:', roleErr);
+      }
+
+      // Unmute if voice muted
+      if (targetMember.voice?.serverMute) {
+        try {
+          await targetMember.voice.setMute(false, 'Unjailed');
+        } catch (muteErr) {
+          console.error('Failed to server unmute user:', muteErr);
+        }
+      }
+
+      const embed = new EmbedBuilder()
+        .setColor(0x10b981)
+        .setDescription(`<@${targetMember.id}> unjailed by <@${member.id}>`);
+
+      const reasonChannel = guild.channels.cache.get(REASON_CHANNEL_ID) as TextChannel | undefined;
+      if (reasonChannel && reasonChannel.isTextBased()) {
+        await reasonChannel.send({ embeds: [embed] }).catch((err) => console.error('Failed to send in reason channel:', err));
+      }
+
+      await interaction.reply({
+        content: `🔓 **تم فك السجن عن <@${targetMember.id}> بنجاح وإزالة رول الجايل.**`,
+        embeds: [embed],
+      });
+      ctx?.addLog?.('unjail', `تم فك سجن <@${targetMember.id}> بواسطة <@${member.id}>`, REASON_CHANNEL_ID, member.id);
+    },
+    executeText: async (message, args, ctx) => {
+      const JAIL_ROLE_ID = '1548527902285627563';
+      const REASON_CHANNEL_ID = '1548528308579340349';
+
+      const isOwner = message.guild!.ownerId === message.author.id;
+      const isStaff = message.member?.permissions.has(PermissionFlagsBits.ModerateMembers) ||
+        message.member?.permissions.has(PermissionFlagsBits.Administrator) ||
+        message.member?.roles.cache.some((r) => ctx?.config?.highStaffRoleIds?.includes(r.id));
+
+      if (!isOwner && !isStaff) {
+        return message.reply('❌ لا تملك صلاحيات المشرفين/السطاف لاستخدام أمر `?unjail`!');
+      }
+
+      const targetMember = message.mentions.members?.first() ||
+        (args[0] ? await message.guild!.members.fetch(args[0].replace(/[<@!>]/g, '')).catch(() => null) : null);
+
+      if (!targetMember) {
+        return message.reply('⚠️ يرجى منشن العضو لفك سجنه: `?unjail @user`');
+      }
+
+      // Remove Jail Role
+      try {
+        await targetMember.roles.remove(JAIL_ROLE_ID);
+      } catch (roleErr: any) {
+        console.error('Failed to remove jail role:', roleErr);
+      }
+
+      // Unmute if voice muted
+      if (targetMember.voice?.serverMute) {
+        try {
+          await targetMember.voice.setMute(false, 'Unjailed');
+        } catch (muteErr) {
+          console.error('Failed to server unmute user:', muteErr);
+        }
+      }
+
+      const embed = new EmbedBuilder()
+        .setColor(0x10b981)
+        .setDescription(`<@${targetMember.id}> unjailed by <@${message.author.id}>`);
+
+      const reasonChannel = message.guild!.channels.cache.get(REASON_CHANNEL_ID) as TextChannel | undefined;
+      if (reasonChannel && reasonChannel.isTextBased()) {
+        await reasonChannel.send({ embeds: [embed] }).catch((err) => console.error('Failed to send in reason channel:', err));
+      }
+
+      await message.reply({
+        content: `🔓 **تم فك السجن عن <@${targetMember.id}> بنجاح وإزالة رول الجايل.**`,
+        embeds: [embed],
+      });
+      ctx?.addLog?.('unjail', `تم فك سجن <@${targetMember.id}> بواسطة <@${message.author.id}>`, REASON_CHANNEL_ID, message.author.id);
     },
   },
   {
@@ -1245,6 +1572,8 @@ export const COMMANDS_REGISTRY: CommandDef[] = [
           `• \`/aichannel\` للسطاف/الأونر (قفل أو تشغيل الذكاء في قناة معينة)\n` +
           `• \`/nasiha\` (نصيحة أخوية بالدارجة)، \`/tafsir\` (تفسير وفائدة)\n\n` +
           `🛡️ **أدوات الإشراف والسطاف (Moderation)**\n` +
+          `• \`/jail\` أو \`?jail @user [السبب]\` (سجن ونقل لفويس الجايل مع الميوت)\n` +
+          `• \`/unjail\` أو \`?unjail @user\` (فك السجن وإزالة الرول)\n` +
           `• \`/lockchat\` (بلع الشات) • \`/unlockchat\` (فتح الشات)\n` +
           `• \`/mute\` (كتم/تايم أوت) • \`/unmute\` (فك الكتم)\n` +
           `• \`/kick\` (طرد) • \`/ban\` (حظر) • \`/unban\` (فك الحظر)\n` +
@@ -1275,6 +1604,8 @@ export const COMMANDS_REGISTRY: CommandDef[] = [
           `• \`!aichannel [all/off/set]\` (أمر تحكم السطاف في قناة الذكاء)\n` +
           `• \`!nasiha\` ، \`!tafsir\`\n\n` +
           `🛡️ **الإشراف والسطاف (مع الاختصارات الدارجة)**\n` +
+          `• \`?jail @user [السبب]\` أو \`!سجن\` (سجن العضو ونقله لفويس الجايل مع الميوت)\n` +
+          `• \`?unjail @user\` أو \`!فك_سجن\` (فك السجن وإزالة الرول)\n` +
           `• \`!بلع\` أو \`!lockchat\` (قفل الشات)\n` +
           `• \`!حل\` أو \`!unlockchat\` (فتح الشات)\n` +
           `• \`!اسكت\` أو \`!mute @user [دقيقة]\` (كتم/تايم أوت)\n` +
