@@ -7,6 +7,7 @@ import { createServer as createViteServer } from 'vite';
 import { initDiscordBot, discordClient } from './discordBot.js';
 import { getAlgerianAiResponse } from './geminiService.js';
 import { COMMANDS_REGISTRY } from './botCommands.js';
+import { loadAllStayConfigs } from './src/voiceStayManager.js';
 
 const rootDir = process.cwd();
 
@@ -24,7 +25,10 @@ let config: {
   botUserId: string;
   ownerUserId: string;
   createVcId: string;
+  waitingAdminVcId: string;
+  waitingNotifiChannelId: string;
   highStaffRoleIds: string[];
+  staffTeamRoleId: string;
   isTokenConfigured: boolean;
   isLiveBotConnected: boolean;
   botTag: string;
@@ -38,7 +42,10 @@ let config: {
   botUserId: '1548852512965140541',
   ownerUserId: '1054739108905361469',
   createVcId: process.env.CREATE_VC_ID || '1054739108905361469',
-  highStaffRoleIds: (process.env.HIGH_STAFF_ROLE_IDS || '1054739108905361469,1548474673124081795').split(','),
+  waitingAdminVcId: process.env.WAITING_ADMIN_VC_ID || '1487888481396195329',
+  waitingNotifiChannelId: process.env.WAITING_NOTIFI_CHANNEL_ID || '1548474983175561337',
+  highStaffRoleIds: (process.env.HIGH_STAFF_ROLE_IDS || '1548474673124081795,1054739108905361469').split(','),
+  staffTeamRoleId: process.env.STAFF_TEAM_ROLE_ID || '1548474556468170772',
   isTokenConfigured: Boolean(process.env.DISCORD_BOT_TOKEN),
   isLiveBotConnected: false,
   botTag: 'Tempvoice#0001',
@@ -175,6 +182,7 @@ app.get('/api/status', (req: Request, res: Response) => {
       ...config,
       activeChannelsCount: Object.keys(activeTempVCs).length,
       uptimeSeconds: Math.floor(process.uptime()),
+      stayVoiceConfigs: loadAllStayConfigs(),
     },
   });
 });

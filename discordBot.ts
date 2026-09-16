@@ -24,6 +24,14 @@ import {
 import path from 'path';
 import fs from 'fs';
 import { joinVoiceChannel, getVoiceConnection, VoiceConnection } from '@discordjs/voice';
+import {
+  joinStayVoiceChannel,
+  leaveStayVoiceChannel,
+  findVoiceChannel,
+  getStayConfig,
+  isStayEnabled,
+  initStayVoiceService,
+} from './src/voiceStayManager.js';
 import { getAlgerianAiResponse } from './geminiService.js';
 import { COMMANDS_REGISTRY } from './botCommands.js';
 
@@ -36,6 +44,9 @@ export interface BotSharedContext {
     ownerUserId: string;
     createVcId: string;
     highStaffRoleIds: string[];
+    waitingAdminVcId?: string;
+    waitingNotifiChannelId?: string;
+    staffTeamRoleId?: string;
     isTokenConfigured: boolean;
     isLiveBotConnected: boolean;
     botTag: string;
@@ -253,6 +264,13 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
     ctx.config.botUserId = client.user?.id || ctx.config.botUserId;
     ctx.addLog('info', `✅ تم تسجيل الدخول بنجاح بحساب البوت: ${client.user?.tag}`);
 
+    // Initialize 24/7 Voice Stay Manager & auto-reconnect service
+    try {
+      initStayVoiceService(client);
+    } catch (stayInitErr: any) {
+      console.error('[Stay Service] Initialization error:', stayInitErr.message);
+    }
+
     // Register Slash Commands globally so commands work even without MessageContent intent
     try {
       const coreSlashCommands = [
@@ -262,11 +280,20 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
         },
         {
           name: 'stay',
-          description: 'تثبيت البوت في الروم الصوتي الحالي 24/7 دون خروج',
+          description: 'تثبيت البوت في الروم الصوتي 24/7 دون خروج مع حماية إعادة الاتصال',
+          options: [
+            {
+              name: 'channel',
+              description: 'الروم الصوتي المراد تثبيت البوت فيه (اختياري - الافتراضي الروم المتواجد فيه)',
+              type: 7, // CHANNEL
+              required: false,
+              channel_types: [ChannelType.GuildVoice, ChannelType.GuildStageVoice],
+            },
+          ],
         },
         {
           name: 'leave',
-          description: 'إخراج البوت وفصله من الروم الصوتي',
+          description: 'إخراج البوت وفصله من الروم الصوتي وإلغاء وضع 24/7',
         },
         {
           name: 'say',
@@ -334,6 +361,54 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
       if (newState.channelId && (!oldState.channelId || oldState.channelId !== newState.channelId)) {
         const joinedChannel = newState.channel;
         const channelName = joinedChannel?.name?.toLowerCase() || '';
+
+        // 1.A: Check if user joined "Waiting Admin" channel
+        const waitingAdminVcId = ctx.config.waitingAdminVcId || '1487888481396195329';
+        const waitingNotifiChannelId = ctx.config.waitingNotifiChannelId || '1548474983175561337';
+        const staffTeamRoleId = ctx.config.staffTeamRoleId || '1548474556468170772';
+        const highStaffRoleId = ctx.config.highStaffRoleIds?.[0] || '1548474673124081795';
+
+        const isWaitingAdmin =
+          newState.channelId === waitingAdminVcId ||
+          channelName.includes('waiting admin') ||
+          channelName.includes('waiting-admin');
+
+        if (isWaitingAdmin) {
+          try {
+            let notifiChannel = guild.channels.cache.get(waitingNotifiChannelId) as TextChannel | null;
+            if (!notifiChannel) {
+              notifiChannel = (await guild.channels.fetch(waitingNotifiChannelId).catch(() => null)) as TextChannel | null;
+            }
+
+            if (notifiChannel && notifiChannel.isTextBased()) {
+              const moveBtn = new ButtonBuilder()
+                .setCustomId(`waitadmin_move_${member.id}`)
+                .setLabel('Move')
+                .setEmoji('🎧')
+                .setStyle(ButtonStyle.Success);
+
+              const row = new ActionRowBuilder<ButtonBuilder>().addComponents(moveBtn);
+
+              await notifiChannel.send({
+                content: `<@&${staffTeamRoleId}> <@&${highStaffRoleId}> <@${member.id}> waiting admin!`,
+                components: [row],
+                allowedMentions: {
+                  roles: [staffTeamRoleId, highStaffRoleId, ...(ctx.config.highStaffRoleIds || [])],
+                  users: [member.id],
+                },
+              });
+
+              ctx.addLog(
+                'waiting_admin_join',
+                `دخول ${member.displayName} لروم Waiting Admin وإرسال إشعار للإدارة`,
+                joinedChannel?.id,
+                member.id
+              );
+            }
+          } catch (notifErr: any) {
+            console.error('[Waiting Admin] Error sending notification:', notifErr);
+          }
+        }
 
         // Check if user joined "⚫️ tap to create" or any creator/generator channel
         const isCreateTrigger =
@@ -707,48 +782,109 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
         return;
       }
 
-      // ---------- 2. COMMAND: ?stay OR !stay OR stay (Stay in VC 24/7) ----------
-      if (lower === '?stay' || lower === '!stay' || lower === 'stay' || lower.startsWith('?stay') || lower.startsWith('!stay')) {
-        const userVoiceChannel = message.member?.voice?.channel;
-        if (!userVoiceChannel) {
-          await message.reply('❌ يجب أن تكون متواجداً داخل روم صوتي لتنفيذ أمر `?stay`!');
+      // ---------- 2. COMMAND: ?stay / !stay / stay / ?ريح / !ريح / ?اقعد (Stay in VC 24/7) ----------
+      const stayTriggers = ['?stay', '!stay', 'stay', '?ريح', '!ريح', '?رياح', '!رياح', '?اقعد', '!اقعد', '?24/7', '!24/7'];
+      const isStayTrigger = stayTriggers.some((trig) => lower === trig || lower.startsWith(trig + ' '));
+
+      if (isStayTrigger) {
+        let query = content.replace(/^([?!]?(stay|ريح|رياح|اقعد|24\/7))\s*/i, '').trim();
+
+        // Check status query: ?stay status / ?stay حالة
+        if (query.toLowerCase() === 'status' || query.toLowerCase() === 'الحالة' || query === 'حالة') {
+          const stayCfg = getStayConfig(message.guild.id);
+          if (stayCfg && stayCfg.enabled) {
+            await message.reply(
+              `🟢 **حالة التثبيت 24/7 (SEK Voice Stay):**\n` +
+              `• 🔊 الروم الصوتي المثبت: <#${stayCfg.channelId}> (\`${stayCfg.channelName}\`)\n` +
+              `• 🛡️ نظام الحماية ضد الانقطاع (Auto-Reconnect): **مفعل وشغال**\n` +
+              `• 👑 تم التثبيت بواسطة: ${stayCfg.setByUsername ? `**${stayCfg.setByUsername}**` : 'المشرف'}\n` +
+              `• 🕒 آخر تحديث: <t:${Math.floor(new Date(stayCfg.updatedAt).getTime() / 1000)}:R>`
+            );
+          } else {
+            await message.reply('ℹ️ البوت غير مثبت في أي روم صوتي 24/7 في هذا السيرفر حالياً. يمكنك تفعيله بكتابة `?stay`.');
+          }
           return;
         }
 
-        try {
-          const connection = joinVoiceChannel({
-            channelId: userVoiceChannel.id,
-            guildId: message.guild.id,
-            adapterCreator: message.guild.voiceAdapterCreator as any,
-            selfDeaf: false,
-            selfMute: true,
-          });
+        let targetChannel: any = null;
+        if (query) {
+          targetChannel = findVoiceChannel(message.guild, query);
+          if (!targetChannel) {
+            await message.reply(`❌ لم يتم العثور على أي روم صوتي مطابق للاسم أو الآيدي: \`${query}\`!`);
+            return;
+          }
+        } else {
+          targetChannel = message.member?.voice?.channel;
+        }
 
-          activeVoiceConnections.set(message.guild.id, connection);
-
+        if (!targetChannel) {
           await message.reply(
-            `🟢 **تم تثبيت البوت في الروم الصوتي <#${userVoiceChannel.id}> بنجاح!**\n` +
-            `سيبقى البوت متواجداً داخل الروم **24/7** ولن يخرج أبداً.\n` +
-            `*(إذا أردت خروجه لاحقاً يمكنك كتابة \\?leave أو /leave)*`
+            '❌ **يجب أن تكون متواجداً داخل روم صوتي، أو تحديد آيدي أو اسم الروم!**\n\n' +
+            '💡 **طرق استخدام أمر ?stay:**\n' +
+            '• `?stay` — وأنت متواجد داخل الروم المراد تثبيت البوت فيه\n' +
+            '• `?stay 123456789012345678` — تثبيت البوت في روم محدد عبر الآيدي مباشرة\n' +
+            '• `?stay اسم_الروم` — تثبيت البوت بالاسم (مثال: `?stay Lounge`)\n' +
+            '• `?stay status` — فحص حالة التثبيت الحالية'
+          );
+          return;
+        }
+
+        const waitMsg = await message.reply(`⏳ **جاري تثبيت البوت في الروم الصوتي <#${targetChannel.id}> بنظام 24/7...**`);
+
+        try {
+          const result = await joinStayVoiceChannel(
+            message.guild,
+            targetChannel,
+            message.author.id,
+            message.author.username
           );
 
-          ctx.addLog('stay', `تم تثبيت البوت في الروم الصوتي: ${userVoiceChannel.name}`, userVoiceChannel.id, message.author.id);
+          if (result.success) {
+            const embed = new EmbedBuilder()
+              .setColor(0x00ff88)
+              .setAuthor({
+                name: 'SEK System • 24/7 Voice Stay',
+                iconURL: message.client.user?.displayAvatarURL(),
+              })
+              .setTitle('🟢 تم تثبيت البوت في الروم الصوتي بنجاح (24/7)')
+              .setDescription(
+                `تم ربط وتثبيت البوت بنجاح داخل الروم الصوتي:\n` +
+                `🔊 **الروم الصوتي:** <#${targetChannel.id}> (\`${targetChannel.name}\`)\n` +
+                `👑 **المنفّذ:** <@${message.author.id}>\n\n` +
+                `🛡️ **ميزات نظام 24/7 الصوتي الذكي:**\n` +
+                `• **بقاء دائم 24/7:** سيبقى البوت متواجداً داخل الروم بشكل مستمر ولن يخرج أبداً.\n` +
+                `• **إعادة اتصال تلقائية (Auto-Reconnect):** في حال انقطاع السيرفر أو ريستارت البوت، سيعود فورياً للروم.\n` +
+                `• **حماية منع الخمول (Keep-Alive):** تفادي إخراج ديسكورد للبوت بسبب الصمت أو عدم وجود أعضاء.\n\n` +
+                `*(للخروج وإلغاء وضع 24/7 في أي وقت يمكنك كتابة ?leave أو /leave)*`
+              )
+              .setFooter({ text: 'SEK System' })
+              .setTimestamp();
+
+            await waitMsg.edit({ content: '', embeds: [embed] });
+            ctx.addLog('stay', `تثبيت البوت 24/7 في الروم: ${targetChannel.name}`, targetChannel.id, message.author.id);
+          } else {
+            await waitMsg.edit(`❌ تعذر تثبيت البوت في الروم: ${result.error}`);
+          }
         } catch (stayErr: any) {
           console.error('Stay command error:', stayErr);
-          await message.reply(`❌ تعذر تثبيت البوت في الروم الصوتي: ${stayErr.message}`);
+          await waitMsg.edit(`❌ تعذر تثبيت البوت: ${stayErr.message}`);
         }
         return;
       }
 
-      // ---------- 2.1 COMMAND: ?leave OR !leave OR leave ----------
-      if (lower === '?leave' || lower === '!leave' || lower === 'leave') {
-        const existingConnection = activeVoiceConnections.get(message.guild.id) || getVoiceConnection(message.guild.id);
-        if (existingConnection) {
-          existingConnection.destroy();
-          activeVoiceConnections.delete(message.guild.id);
-          await message.reply('👋 تم فصل البوت وخروجه من الروم الصوتي بنجاح.');
-        } else {
-          await message.reply('ℹ️ البوت ليس متصلاً بأي روم صوتي في هذا السيرفر حالياً.');
+      // ---------- 2.1 COMMAND: ?leave OR !leave OR leave OR ?اخرج ----------
+      const leaveTriggers = ['?leave', '!leave', 'leave', '?اخرج', '!اخرج', '?خروج', '!خروج'];
+      if (leaveTriggers.includes(lower)) {
+        try {
+          const result = await leaveStayVoiceChannel(message.guild);
+          if (result.wasConnected) {
+            await message.reply('👋 **تم فصل وخروج البوت من الروم الصوتي وإلغاء وضع 24/7 بنجاح.**');
+            ctx.addLog('leave', `تم فصل البوت من الروم الصوتي بواسطة ${message.author.username}`, '', message.author.id);
+          } else {
+            await message.reply('ℹ️ البوت ليس متصلاً بأي روم صوتي في هذا السيرفر حالياً.');
+          }
+        } catch (leaveErr: any) {
+          await message.reply(`❌ خطأ أثناء فصل البوت: ${leaveErr.message}`);
         }
         return;
       }
@@ -999,48 +1135,66 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
 
         // /stay
         if (commandName === 'stay') {
-          const userVoiceChannel = member?.voice?.channel;
-          if (!userVoiceChannel) {
+          const selectedChannel = interaction.options.getChannel('channel') as any;
+          const targetChannel = selectedChannel || member?.voice?.channel;
+
+          if (!targetChannel) {
             await interaction.reply({
-              content: '❌ يجب أن تكون متواجداً داخل روم صوتي لتنفيذ أمر `/stay`!',
+              content: '❌ يجب أن تكون متواجداً داخل روم صوتي أو اختيار روم محدد لتنفيذ أمر `/stay`!',
               ephemeral: true,
             });
             return;
           }
 
+          await interaction.deferReply();
           try {
-            const connection = joinVoiceChannel({
-              channelId: userVoiceChannel.id,
-              guildId: interaction.guild.id,
-              adapterCreator: interaction.guild.voiceAdapterCreator as any,
-              selfDeaf: false,
-              selfMute: true,
-            });
+            const result = await joinStayVoiceChannel(
+              interaction.guild,
+              targetChannel,
+              member.id,
+              member.user.username
+            );
 
-            activeVoiceConnections.set(interaction.guild.id, connection);
+            if (result.success) {
+              const embed = new EmbedBuilder()
+                .setColor(0x00ff88)
+                .setTitle('🟢 تم تثبيت البوت في الروم الصوتي 24/7')
+                .setDescription(
+                  `تم ربط وتثبيت البوت بنجاح داخل الروم الصوتي:\n` +
+                  `🔊 **الروم الصوتي:** <#${targetChannel.id}> (\`${targetChannel.name}\`)\n` +
+                  `👑 **المنفّذ:** <@${member.id}>\n\n` +
+                  `🛡️ **ميزات 24/7:**\n` +
+                  `• بقاء دائم داخل الروم الصوتي.\n` +
+                  `• إعادة اتصال تلقائية عند انقطاع الاتصال أو إعادة تشغيل البوت.\n` +
+                  `• حماية منع الخمول لتفادي فصل الاتصال.\n\n` +
+                  `*(للخروج في أي وقت اكتب \`/leave\` أو \`?leave\`)*`
+                )
+                .setFooter({ text: 'SEK System • 24/7 Voice Stay' })
+                .setTimestamp();
 
-            await interaction.reply({
-              content: `🟢 **تم تثبيت البوت في الروم الصوتي <#${userVoiceChannel.id}> بنجاح!** سيبقى متواجداً 24/7.`,
-            });
-            ctx.addLog('stay', `تثبيت البوت في الروم الصوتي عبر /stay: ${userVoiceChannel.name}`, userVoiceChannel.id, member.id);
+              await interaction.editReply({ embeds: [embed] });
+              ctx.addLog('stay', `تثبيت البوت في الروم عبر /stay: ${targetChannel.name}`, targetChannel.id, member.id);
+            } else {
+              await interaction.editReply(`❌ تعذر تثبيت البوت في الروم الصوتي: ${result.error}`);
+            }
           } catch (err: any) {
-            await interaction.reply({
-              content: `❌ تعذر تثبيت البوت: ${err.message}`,
-              ephemeral: true,
-            });
+            await interaction.editReply(`❌ خطأ أثناء تنفيذ أمر stay: ${err.message}`);
           }
           return;
         }
 
         // /leave
         if (commandName === 'leave') {
-          const existingConnection = activeVoiceConnections.get(interaction.guild.id) || getVoiceConnection(interaction.guild.id);
-          if (existingConnection) {
-            existingConnection.destroy();
-            activeVoiceConnections.delete(interaction.guild.id);
-            await interaction.reply({ content: '👋 تم فصل وخروج البوت من الروم الصوتي بنجاح.' });
-          } else {
-            await interaction.reply({ content: 'ℹ️ البوت ليس متصلاً بأي روم صوتي حالياً.', ephemeral: true });
+          try {
+            const result = await leaveStayVoiceChannel(interaction.guild);
+            if (result.wasConnected) {
+              await interaction.reply('👋 **تم فصل وخروج البوت من الروم الصوتي وإلغاء وضع 24/7 بنجاح.**');
+              ctx.addLog('leave', `تم فصل البوت عبر /leave بواسطة ${member.displayName}`, '', member.id);
+            } else {
+              await interaction.reply({ content: 'ℹ️ البوت ليس متصلاً بأي روم صوتي حالياً.', ephemeral: true });
+            }
+          } catch (leaveErr: any) {
+            await interaction.reply({ content: `❌ خطأ أثناء فصل البوت: ${leaveErr.message}`, ephemeral: true });
           }
           return;
         }
@@ -1083,6 +1237,122 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
         const customId = interaction.customId;
         const member = interaction.member as GuildMember;
         if (!member) return;
+
+        // ==================== WAITING ADMIN MOVE BUTTON ====================
+        if (customId.startsWith('waitadmin_move_')) {
+          const targetUserId = customId.replace('waitadmin_move_', '');
+
+          const staffTeamRoleId = ctx.config.staffTeamRoleId || '1548474556468170772';
+          const highStaffRoleId = ctx.config.highStaffRoleIds?.[0] || '1548474673124081795';
+
+          // Check if staff member (has staff team role, high staff role, or admin permissions)
+          const isStaff =
+            member.roles.cache.has(staffTeamRoleId) ||
+            member.roles.cache.has(highStaffRoleId) ||
+            (ctx.config.highStaffRoleIds && ctx.config.highStaffRoleIds.some((rId) => member.roles.cache.has(rId))) ||
+            member.permissions.has(PermissionFlagsBits.Administrator) ||
+            member.permissions.has(PermissionFlagsBits.MoveMembers) ||
+            member.id === ctx.config.ownerUserId;
+
+          if (!isStaff) {
+            await interaction.reply({
+              content: '🚫 هذا الزر مخصص لطاقم الإدارة (Staff Team / High Staff) فقط!',
+              ephemeral: true,
+            });
+            return;
+          }
+
+          // Staff must be in a voice channel
+          const staffVoiceChannel = member.voice.channel;
+          if (!staffVoiceChannel) {
+            await interaction.reply({
+              content: '❌ يجب أن تكون متواجداً داخل روم صوتي لسحب العضو إليك!',
+              ephemeral: true,
+            });
+            return;
+          }
+
+          // Fetch the target member
+          const targetMember = await interaction.guild?.members.fetch(targetUserId).catch(() => null);
+          if (!targetMember || !targetMember.voice.channel) {
+            await interaction.reply({
+              content: '❌ العضو غير متواجد في أي روم صوتي حالياً أو غادر السيرفر!',
+              ephemeral: true,
+            });
+            return;
+          }
+
+          // Move the user to staff's voice channel
+          try {
+            await targetMember.voice.setChannel(staffVoiceChannel);
+          } catch (moveErr: any) {
+            await interaction.reply({
+              content: `❌ تعذر سحب العضو: ${moveErr.message}. يرجى التحقق من صلاحية Move Members للبوت وترتيب رتبته.`,
+              ephemeral: true,
+            });
+            return;
+          }
+
+          // Unmute member completely (server-mute, server-deafen, and voice permissions)
+          try {
+            if (targetMember.voice.serverMute) {
+              await targetMember.voice.setMute(false, 'Waiting Admin handled - unmute');
+            }
+          } catch (muteErr: any) {
+            console.warn('[Waiting Admin] Failed to unmute:', muteErr.message);
+          }
+
+          try {
+            if (targetMember.voice.serverDeaf) {
+              await targetMember.voice.setDeaf(false, 'Waiting Admin handled - undeafen');
+            }
+          } catch {}
+
+          // Remove any channel permission mute overrides if present
+          try {
+            await staffVoiceChannel.permissionOverwrites.edit(targetMember.id, {
+              Speak: true,
+              SendMessages: true,
+              Stream: true,
+            }).catch(() => {});
+          } catch {}
+
+          // Format handled button (disabled gray button)
+          const handledBtn = new ButtonBuilder()
+            .setCustomId(`waitadmin_handled_${targetUserId}`)
+            .setLabel('Handled')
+            .setEmoji('🎧')
+            .setStyle(ButtonStyle.Secondary)
+            .setDisabled(true);
+
+          const handledRow = new ActionRowBuilder<ButtonBuilder>().addComponents(handledBtn);
+
+          // Update message exactly matching the requested format & screenshot
+          // ✅ Handled by @staff (Moved @user ➡️ <#targetChannelId>)
+          await interaction.update({
+            content: `✅ Handled by <@${member.id}> (Moved <@${targetMember.id}> ➡️ <#${staffVoiceChannel.id}>)`,
+            components: [handledRow],
+            allowedMentions: {
+              users: [member.id, targetMember.id],
+            },
+          });
+
+          ctx.addLog(
+            'waiting_admin_handled',
+            `تم سحب العضو ${targetMember.displayName} بواسطة ${member.displayName} إلى ${staffVoiceChannel.name} وإلغاء الميوت عنه`,
+            staffVoiceChannel.id,
+            member.id
+          );
+          return;
+        }
+
+        if (customId.startsWith('waitadmin_handled_')) {
+          await interaction.reply({
+            content: 'ℹ️ هذا الطلب تم التعامل معه وسحبه مسبقاً!',
+            ephemeral: true,
+          });
+          return;
+        }
 
         // Determine user's voice channel
         let voiceChannel = member.voice.channel as VoiceChannel | null;
