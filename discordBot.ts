@@ -204,9 +204,20 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
 
       const allSlashCommands = [...coreSlashCommands, ...registrySlashCommands];
 
+      // 1. Register instantly to each guild so slash commands appear immediately without waiting 1 hour!
+      for (const guild of client.guilds.cache.values()) {
+        try {
+          await guild.commands.set(allSlashCommands);
+          console.log(`[Discord Bot] Instant slash commands registered in guild: ${guild.name} (${allSlashCommands.length} commands)`);
+        } catch (gErr: any) {
+          console.warn(`[Discord Bot] Couldn't register slash commands directly in guild ${guild.name}:`, gErr.message);
+        }
+      }
+
+      // 2. Also register globally for all servers
       await client.application?.commands.set(allSlashCommands);
-      console.log(`[Discord Bot] ${allSlashCommands.length} Slash Commands successfully registered!`);
-      ctx.addLog('info', `تم تسجيل ${allSlashCommands.length} أمراً تفاعلياً (Slash Commands) بنجاح`);
+      console.log(`[Discord Bot] ${allSlashCommands.length} Slash Commands successfully registered globally and per-guild!`);
+      ctx.addLog('info', `تم تسجيل ${allSlashCommands.length} أمراً تفاعلياً (Slash Commands) في السيرفرات بنجاح فوراً`);
     } catch (cmdRegErr: any) {
       console.error('[Discord Bot] Failed to register slash commands:', cmdRegErr.message);
     }
