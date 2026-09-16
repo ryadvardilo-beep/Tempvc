@@ -18,22 +18,16 @@ export const DiscordEmbedPanel: React.FC<DiscordEmbedPanelProps> = ({
   const isMasterBotOwner = currentUser.id === '1054739108905361469';
   const hasPermission = isOwner || isMasterBotOwner || currentUser.isAdmin;
 
-  // The 8 Buttons ordered exactly as in user reference IMG_4851 (2 rows of 4)
-  const buttonRows = [
-    // Row 1: Access & Privacy
-    [
-      { id: 'lock', emoji: '🔒', label: 'LOCK', tooltip: 'قفل الروم ومنع دخول الأعضاء' },
-      { id: 'unlock', emoji: '🔓', label: 'UNLOCK', tooltip: 'فتح الروم للجميع' },
-      { id: 'trust', emoji: '🤝', label: 'TRUST', tooltip: 'منح تصريح دخول لعضو' },
-      { id: 'block', emoji: '🚫', label: 'BLOCK', tooltip: 'حظر وطرد عضو' },
-    ],
-    // Row 2: Management & Settings
-    [
-      { id: 'rename', emoji: '✏️', label: 'RENAME', tooltip: 'تغيير اسم الروم' },
-      { id: 'limit', emoji: '🔢', label: 'LIMIT', tooltip: 'تحديد سعة الروم (0-99)' },
-      { id: 'kick', emoji: '👢', label: 'KICK', tooltip: 'طرد عضو من الروم' },
-      { id: 'admin', emoji: '👑', label: 'ADMIN', tooltip: 'إدارة واستلام ملكية الروم' },
-    ],
+  // The 8 Cyberpunk Buttons ordered exactly as in user reference IMG_4851
+  const cyberButtons = [
+    { id: 'lock', label: 'LOCK', tooltip: 'قفل الروم ومنع دخول الأعضاء' },
+    { id: 'unlock', label: 'UNLOCK', tooltip: 'فتح الروم للجميع' },
+    { id: 'trust', label: 'TRUST', tooltip: 'منح تصريح دخول لعضو' },
+    { id: 'block', label: 'BLOCK', tooltip: 'حظر وطرد عضو' },
+    { id: 'rename', label: 'RENAME', tooltip: 'تغيير اسم الروم' },
+    { id: 'limit', label: 'LIMIT', tooltip: 'تحديد سعة الروم (0-99)' },
+    { id: 'kick', label: 'KICK', tooltip: 'طرد عضو من الروم' },
+    { id: 'admin', label: 'ADMIN', tooltip: 'إدارة واستلام ملكية الروم' },
   ];
 
   return (
@@ -106,7 +100,7 @@ export const DiscordEmbedPanel: React.FC<DiscordEmbedPanelProps> = ({
           </div>
         </div>
 
-        {/* Cyber Banner Graphic matching IMG_4851 */}
+        {/* Cyber Banner Graphic */}
         <div className="relative rounded-lg overflow-hidden border border-cyan-500/30 bg-[#091530] my-3">
           <img
             src="/voice_banner.jpg"
@@ -118,37 +112,42 @@ export const DiscordEmbedPanel: React.FC<DiscordEmbedPanelProps> = ({
           />
         </div>
 
-        {/* 8 Action Buttons Grid (2 Rows of 4) matching IMG_4851 */}
-        <div className="pt-2 space-y-2">
+        {/* 8 Cyberpunk Action Buttons matching user photo IMG_4851 */}
+        <div className="pt-2 space-y-2.5">
           <div className="flex items-center justify-between text-xs text-[#949ba4] font-medium mb-1">
-            <span>لوحة الأزرار التفاعلية الـ 8 (اضغط أي زر لتنفيذ الأمر فوراً):</span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+              <span className="text-cyan-300 font-semibold">أزرار التحكم الذكية الـ 8 (Cyberpunk Interface):</span>
+            </span>
             <span className={hasPermission ? 'text-emerald-400' : 'text-amber-400'}>
               {hasPermission ? '✅ لديك صلاحية التحكم' : '⚠️ بعض الأوامر تتطلب ملكية الروم'}
             </span>
           </div>
 
-          {buttonRows.map((row, rowIdx) => (
-            <div key={rowIdx} className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              {row.map((btn) => (
-                <button
-                  key={btn.id}
-                  id={`btn-${btn.id}`}
-                  type="button"
-                  title={`${btn.label} - ${btn.tooltip}`}
-                  disabled={isActionLoading}
-                  onClick={() => onControlAction(btn.id)}
-                  className="flex items-center justify-center gap-2 py-3 px-4 rounded-md bg-[#2b2d31] hover:bg-[#35373c] active:bg-[#404249] text-white border border-[#383a40] hover:border-cyan-400 transition-all shadow-sm active:scale-96 cursor-pointer group"
-                >
-                  <span className="text-lg group-hover:scale-110 transition-transform">
-                    {btn.emoji}
-                  </span>
-                  <span className="text-xs font-bold font-mono text-[#dbdee1] group-hover:text-cyan-300 tracking-wider">
-                    {btn.label}
-                  </span>
-                </button>
-              ))}
-            </div>
-          ))}
+          {/* 8 Cyber Buttons Grid - Exactly as in screenshot IMG_4851 */}
+          <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 sm:gap-2.5">
+            {cyberButtons.map((btn) => (
+              <button
+                key={btn.id}
+                id={`btn-${btn.id}`}
+                type="button"
+                title={`${btn.label} - ${btn.tooltip}`}
+                disabled={isActionLoading}
+                onClick={() => onControlAction(btn.id)}
+                className="group relative flex flex-col items-center justify-center p-1 sm:p-1.5 rounded-xl bg-gradient-to-b from-[#0e172e]/90 to-[#060b18]/95 border border-cyan-500/30 hover:border-cyan-400 active:border-purple-500 shadow-[0_0_12px_rgba(0,240,255,0.12)] hover:shadow-[0_0_20px_rgba(0,240,255,0.4)] active:scale-95 transition-all duration-200 cursor-pointer overflow-hidden"
+              >
+                {/* Neon highlight reflection */}
+                <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-60 group-hover:opacity-100 transition-opacity"></div>
+                
+                {/* The exact Cyberpunk Badge matching IMG_4851 */}
+                <img
+                  src={`/buttons/${btn.id}.png`}
+                  alt={btn.label}
+                  className="w-full max-w-[85px] sm:max-w-[100px] h-auto object-contain transition-transform duration-200 group-hover:scale-105 select-none drop-shadow-[0_0_8px_rgba(0,240,255,0.35)]"
+                />
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Footer */}

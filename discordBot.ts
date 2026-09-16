@@ -59,6 +59,7 @@ export function getBannerAndAvatarFiles() {
   const files: AttachmentBuilder[] = [];
   const bannerPath = path.join(process.cwd(), 'public', 'voice_banner.jpg');
   const avatarPath = path.join(process.cwd(), 'public', 'avatar.png');
+  const stripPath = path.join(process.cwd(), 'public', 'buttons', 'buttons_strip.png');
 
   let bannerUrl = 'attachment://voice_banner.jpg';
   let hasBanner = false;
@@ -72,6 +73,9 @@ export function getBannerAndAvatarFiles() {
     files.push(new AttachmentBuilder(avatarPath, { name: 'avatar.png' }));
     hasAvatar = true;
   }
+  if (fs.existsSync(stripPath)) {
+    files.push(new AttachmentBuilder(stripPath, { name: 'buttons_strip.png' }));
+  }
 
   return {
     files,
@@ -81,23 +85,88 @@ export function getBannerAndAvatarFiles() {
 }
 
 /**
+ * Automatically uploads and registers the 8 custom cyberpunk buttons emojis to the Discord server
+ */
+export async function ensureGuildEmojis(guild?: Guild | null) {
+  if (!guild) return;
+  try {
+    const me = guild.members.me;
+    const canManage =
+      me?.permissions.has(PermissionFlagsBits.ManageGuildExpressions) ||
+      me?.permissions.has(PermissionFlagsBits.ManageEmojisAndStickers) ||
+      me?.permissions.has(PermissionFlagsBits.Administrator);
+    if (!canManage) return;
+
+    const emojiList = [
+      { name: 'sek_lock', file: 'sek_lock.png' },
+      { name: 'sek_unlock', file: 'sek_unlock.png' },
+      { name: 'sek_trust', file: 'sek_trust.png' },
+      { name: 'sek_block', file: 'sek_block.png' },
+      { name: 'sek_rename', file: 'sek_rename.png' },
+      { name: 'sek_limit', file: 'sek_limit.png' },
+      { name: 'sek_kick', file: 'sek_kick.png' },
+      { name: 'sek_admin', file: 'sek_admin.png' },
+    ];
+
+    for (const item of emojiList) {
+      const exists = guild.emojis.cache.some((e) => e.name === item.name);
+      if (!exists) {
+        const filePath = path.join(process.cwd(), 'public', 'emojis', item.file);
+        if (fs.existsSync(filePath)) {
+          await guild.emojis.create({
+            attachment: filePath,
+            name: item.name,
+            reason: 'SEK Cyberpunk Voice Buttons Emojis',
+          }).catch((err: any) => {
+            console.warn(`[SEK] Could not upload emoji ${item.name}:`, err.message);
+          });
+        }
+      }
+    }
+  } catch (err: any) {
+    console.error('[SEK] ensureGuildEmojis error:', err.message);
+  }
+}
+
+/**
  * Creates the 8 buttons matching the exact layout and icons from user reference IMG_4851:
  * Row 1: LOCK, UNLOCK, TRUST, BLOCK
  * Row 2: RENAME, LIMIT, KICK, ADMIN
+ * Prefers the custom cyberpunk server emojis (sek_*) over standard emojis!
  */
-export function buildVoiceButtonRows(prefix = 'vc'): ActionRowBuilder<ButtonBuilder>[] {
+export function buildVoiceButtonRows(prefix = 'vc', guild?: Guild | null): ActionRowBuilder<ButtonBuilder>[] {
+  const getEmoji = (name: string, fallback: string) => {
+    if (guild) {
+      const custom = guild.emojis.cache.find((e) => e.name === name);
+      if (custom) return custom.id;
+    }
+    return fallback;
+  };
+
+  const createBtn = (id: string, label: string, emojiName: string, fallbackEmoji: string) => {
+    const btn = new ButtonBuilder()
+      .setCustomId(`${prefix}_${id}`)
+      .setLabel(label)
+      .setStyle(ButtonStyle.Secondary);
+    const em = getEmoji(emojiName, fallbackEmoji);
+    if (em) {
+      btn.setEmoji(em);
+    }
+    return btn;
+  };
+
   const row1 = new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder().setCustomId(`${prefix}_lock`).setLabel('LOCK').setEmoji('🔒').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId(`${prefix}_unlock`).setLabel('UNLOCK').setEmoji('🔓').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId(`${prefix}_trust`).setLabel('TRUST').setEmoji('🤝').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId(`${prefix}_block`).setLabel('BLOCK').setEmoji('🚫').setStyle(ButtonStyle.Secondary)
+    createBtn('lock', 'LOCK', 'sek_lock', '🔒'),
+    createBtn('unlock', 'UNLOCK', 'sek_unlock', '🔓'),
+    createBtn('trust', 'TRUST', 'sek_trust', '🤝'),
+    createBtn('block', 'BLOCK', 'sek_block', '🚫')
   );
 
   const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder().setCustomId(`${prefix}_rename`).setLabel('RENAME').setEmoji('✏️').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId(`${prefix}_limit`).setLabel('LIMIT').setEmoji('🔢').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId(`${prefix}_kick`).setLabel('KICK').setEmoji('👢').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId(`${prefix}_admin`).setLabel('ADMIN').setEmoji('👑').setStyle(ButtonStyle.Secondary)
+    createBtn('rename', 'RENAME', 'sek_rename', '✏️'),
+    createBtn('limit', 'LIMIT', 'sek_limit', '🔢'),
+    createBtn('kick', 'KICK', 'sek_kick', '👢'),
+    createBtn('admin', 'ADMIN', 'sek_admin', '👑')
   );
 
   return [row1, row2];
@@ -387,9 +456,10 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
 
           // Send the 8-button Control Panel Embed into the newly created voice channel's text chat!
           try {
+            ensureGuildEmojis(tempChannel.guild).catch(() => {});
             const { files, bannerUrl, hasAvatar } = getBannerAndAvatarFiles();
             const embed = buildControlEmbed(tempChannel.name, member.displayName, bannerUrl, hasAvatar);
-            const buttonRows = buildVoiceButtonRows('vc');
+            const buttonRows = buildVoiceButtonRows('vc', tempChannel.guild);
             await (tempChannel as any).send({
               content: `👋 مرحباً بك <@${member.id}>! هذا هو بانل التحكم الخاص برومك الصوتي.`,
               embeds: [embed],
@@ -562,9 +632,10 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
           ctx.config.createVcId = tapChannel.id;
 
           // 4. Send the 8-button Control Embed directly into ⚫️-interface
+          await ensureGuildEmojis(message.guild);
           const { files, bannerUrl, hasAvatar } = getBannerAndAvatarFiles();
           const controlEmbed = buildControlEmbed('SEK Interface', 'جميع الأعضاء', bannerUrl, hasAvatar);
-          const buttonRows = buildVoiceButtonRows('vc');
+          const buttonRows = buildVoiceButtonRows('vc', message.guild);
 
           await interfaceChannel.send({
             embeds: [controlEmbed],
@@ -597,9 +668,10 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
         }
 
         try {
+          await ensureGuildEmojis(message.guild);
           const { files, bannerUrl, hasAvatar } = getBannerAndAvatarFiles();
           const controlEmbed = buildControlEmbed('SEK Interface', 'جميع الأعضاء', bannerUrl, hasAvatar);
-          const buttonRows = buildVoiceButtonRows('vc');
+          const buttonRows = buildVoiceButtonRows('vc', message.guild);
 
           await (message.channel as any).send({
             embeds: [controlEmbed],
@@ -612,6 +684,25 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
         } catch (err: any) {
           console.error('Panel send error:', err);
           await message.reply(`❌ فشل إرسال لوحة التحكم: ${err.message}`);
+        }
+        return;
+      }
+
+      // ---------- 1.6 COMMAND: !emojis OR !ايموجي (Upload 8 Cyberpunk Emojis to Server) ----------
+      if (lower === '!emojis' || lower === '?emojis' || lower === '!ايموجي' || lower === 'emojis') {
+        const isAdmin = message.member?.permissions.has(PermissionFlagsBits.Administrator) || message.author.id === ctx.config.ownerUserId;
+        if (!isAdmin) {
+          await message.reply('🚫 هذا الأمر مخصص للمسؤولين فقط لإعداد وتثبيت ايموجيات الأزرار في السيرفر!');
+          return;
+        }
+
+        const waitMsg = await message.reply('⏳ **جاري فحص ورفع ايموجيات الأزرار الـ 8 السايبربانك إلى السيرفر...**');
+        try {
+          await ensureGuildEmojis(message.guild);
+          const uploadedCount = message.guild?.emojis.cache.filter((e) => e.name.startsWith('sek_')).size || 0;
+          await waitMsg.edit(`✅ **تم تجهيز وتثبيت ايموجيات الأزرار بنجاح!**\nعدد ايموجيات SEK في السيرفر: \`${uploadedCount}\` ايموجي.`);
+        } catch (emErr: any) {
+          await waitMsg.edit(`❌ خطأ أثناء رفع الايموجيات: ${emErr.message}`);
         }
         return;
       }
@@ -845,9 +936,10 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
 
             ctx.config.createVcId = tapChannel.id;
 
+            await ensureGuildEmojis(interaction.guild);
             const { files, bannerUrl, hasAvatar } = getBannerAndAvatarFiles();
             const controlEmbed = buildControlEmbed('SEK Interface', 'جميع الأعضاء', bannerUrl, hasAvatar);
-            const buttonRows = buildVoiceButtonRows('vc');
+            const buttonRows = buildVoiceButtonRows('vc', interaction.guild);
 
             await interfaceChannel.send({
               embeds: [controlEmbed],
@@ -883,9 +975,10 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
 
           try {
             await interaction.deferReply({ ephemeral: true });
+            await ensureGuildEmojis(interaction.guild);
             const { files, bannerUrl, hasAvatar } = getBannerAndAvatarFiles();
             const controlEmbed = buildControlEmbed('SEK Interface', 'جميع الأعضاء', bannerUrl, hasAvatar);
-            const buttonRows = buildVoiceButtonRows('vc');
+            const buttonRows = buildVoiceButtonRows('vc', interaction.guild);
 
             if (interaction.channel && 'send' in interaction.channel) {
               await (interaction.channel as any).send({
