@@ -21,6 +21,8 @@ import {
   ComponentType,
 } from 'discord.js';
 import { joinVoiceChannel, getVoiceConnection, VoiceConnection } from '@discordjs/voice';
+import { getAlgerianAiResponse } from './geminiService.js';
+import { COMMANDS_REGISTRY } from './botCommands.js';
 
 // Shared state references passed from server.ts
 export interface BotSharedContext {
@@ -162,7 +164,7 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
 
     // Register Slash Commands globally so commands work even without MessageContent intent
     try {
-      const slashCommands = [
+      const coreSlashCommands = [
         {
           name: 'setup',
           description: 'تجهيز وإعداد نظام الرومات الصوتية والكاتيجوري وقناة التحكم بالأزرار',
@@ -193,9 +195,18 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
         },
       ];
 
-      await client.application?.commands.set(slashCommands);
-      console.log('[Discord Bot] Slash Commands successfully registered!');
-      ctx.addLog('info', 'تم تسجيل الأوامر التفاعلية (Slash Commands) بنجاح');
+      // Merge with 50+ expanded commands
+      const registrySlashCommands = COMMANDS_REGISTRY.map((cmd) => ({
+        name: cmd.name,
+        description: cmd.description,
+        options: cmd.options || [],
+      }));
+
+      const allSlashCommands = [...coreSlashCommands, ...registrySlashCommands];
+
+      await client.application?.commands.set(allSlashCommands);
+      console.log(`[Discord Bot] ${allSlashCommands.length} Slash Commands successfully registered!`);
+      ctx.addLog('info', `تم تسجيل ${allSlashCommands.length} أمراً تفاعلياً (Slash Commands) بنجاح`);
     } catch (cmdRegErr: any) {
       console.error('[Discord Bot] Failed to register slash commands:', cmdRegErr.message);
     }
@@ -405,12 +416,24 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
     try {
       if (message.author.bot || !message.guild) return;
 
-      // Extract content and handle bot mention prefix
+      // Extract content and check if the bot was directly mentioned (tagged)
+      const wasBotMentioned = Boolean(client.user && message.mentions.has(client.user.id));
       let content = message.content.trim();
-      if (client.user && message.mentions.has(client.user.id)) {
+      if (wasBotMentioned && client.user) {
         content = content.replace(new RegExp(`^<@!?${client.user.id}>\\s*`, 'i'), '').trim();
       }
       const lower = content.toLowerCase();
+
+      // ---------- AI INTERACTION ON BOT MENTION (Algerian Darja Persona) ----------
+      if (wasBotMentioned && (!content.startsWith('!') && !content.startsWith('?') && !content.startsWith('/'))) {
+        // User tagged the bot with a natural conversational sentence!
+        const prompt = content || 'السلام عليكم يا خويا واش راك؟';
+        await message.channel.sendTyping().catch(() => {});
+        const aiAnswer = await getAlgerianAiResponse(prompt, message.author.username);
+        await message.reply(aiAnswer);
+        ctx.addLog('ai', `محادثة ذكاء اصطناعي (منشن) مع ${message.author.username}: "${prompt.slice(0, 35)}"`, message.channel.id, message.author.id);
+        return;
+      }
 
       // ---------- 1. COMMAND: setup OR !setup OR ?setup ----------
       if (lower === 'setup' || lower === '!setup' || lower === '?setup' || lower.startsWith('!setup') || lower.startsWith('?setup')) {
@@ -601,6 +624,23 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
         await message.reply(`🏓 Pong! سرعة استجابة البوت الحالية: **${ping}ms**`);
         return;
       }
+
+      // ---------- 5. DISPATCH TO 50+ REGISTRY TEXT COMMANDS (!cmd or ?cmd) ----------
+      const prefixMatch = content.match(/^[!?]([a-zA-Z0-9_-]+)(?:\s+(.*))?$/s);
+      if (prefixMatch) {
+        const cmdName = prefixMatch[1].toLowerCase();
+        const rawArgs = prefixMatch[2] ? prefixMatch[2].trim().split(/\s+/) : [];
+        const foundCmd = COMMANDS_REGISTRY.find((c) => c.name.toLowerCase() === cmdName);
+        if (foundCmd && foundCmd.executeText) {
+          try {
+            await foundCmd.executeText(message, rawArgs, ctx);
+          } catch (cmdErr: any) {
+            console.error(`Error running text command !${cmdName}:`, cmdErr);
+            await message.reply(`❌ حدث خطأ أثناء تنفيذ الأمر: ${cmdErr.message}`);
+          }
+          return;
+        }
+      }
     } catch (msgErr) {
       console.error('Error handling message:', msgErr);
     }
@@ -776,6 +816,22 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
         if (commandName === 'ping') {
           const ping = client.ws.ping;
           await interaction.reply({ content: `🏓 Pong! سرعة الاستجابة: **${ping}ms**` });
+          return;
+        }
+
+        // Check registry for any of the 50+ commands
+        const registryCmd = COMMANDS_REGISTRY.find((c) => c.name === commandName);
+        if (registryCmd && registryCmd.executeSlash) {
+          try {
+            await registryCmd.executeSlash(interaction, ctx);
+          } catch (cmdErr: any) {
+            console.error(`Error executing slash command /${commandName}:`, cmdErr);
+            if (!interaction.replied && !interaction.deferred) {
+              await interaction.reply({ content: `❌ حدث خطأ أثناء تنفيذ الأمر: ${cmdErr.message}`, ephemeral: true });
+            } else {
+              await interaction.followUp({ content: `❌ حدث خطأ أثناء تنفيذ الأمر: ${cmdErr.message}`, ephemeral: true });
+            }
+          }
           return;
         }
       }

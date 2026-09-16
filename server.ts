@@ -5,6 +5,8 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
 import { initDiscordBot, discordClient } from './discordBot.js';
+import { getAlgerianAiResponse } from './geminiService.js';
+import { COMMANDS_REGISTRY } from './botCommands.js';
 
 const rootDir = process.cwd();
 
@@ -656,6 +658,33 @@ app.get('/api/banner', (req: Request, res: Response) => {
     return res.sendFile(bannerPath);
   }
   res.redirect('https://i.imgur.com/bvh29zT.png');
+});
+
+// POST /api/ai/chat (Gemini AI Algerian Darja API)
+app.post('/api/ai/chat', async (req: Request, res: Response) => {
+  const { prompt, userName } = req.body;
+  if (!prompt || typeof prompt !== 'string') {
+    return res.status(400).json({ error: 'يرجى تقديم نص الرسالة (prompt)' });
+  }
+
+  try {
+    const reply = await getAlgerianAiResponse(prompt, userName || 'زائر');
+    addLog('ai', `استجابة ذكاء اصطناعي لـ ${userName || 'المستخدم'}: "${prompt.slice(0, 30)}"`);
+    res.json({ success: true, reply });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'حدث خطأ في معالجة الذكاء الاصطناعي' });
+  }
+});
+
+// GET /api/commands (Returns all 50+ registered bot commands)
+app.get('/api/commands', (req: Request, res: Response) => {
+  const commands = COMMANDS_REGISTRY.map((c) => ({
+    name: c.name,
+    description: c.description,
+    category: c.category,
+    options: c.options || [],
+  }));
+  res.json({ total: commands.length, commands });
 });
 
 // POST /api/bot/connect

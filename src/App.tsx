@@ -9,8 +9,10 @@ import { InfoModal } from './components/InfoModal';
 import { XOGameModal } from './components/XOGameModal';
 import { MemberSelectModal } from './components/MemberSelectModal';
 import { ConfigModal } from './components/ConfigModal';
+import { AlgerianAiModal } from './components/AlgerianAiModal';
+import { CommandsListModal } from './components/CommandsListModal';
 import { TempVoiceChannel, VoiceMember, BotConfig, BotLog, StaffAlert } from './types';
-import { Sparkles, Terminal, Volume2, ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Sparkles, Terminal, Volume2, ShieldCheck, CheckCircle2, AlertCircle, MessageSquare } from 'lucide-react';
 
 const mockUsers: VoiceMember[] = [
   {
@@ -56,6 +58,8 @@ export default function App() {
   const [isInfoOpen, setIsInfoOpen] = useState(false);
   const [isXOGameOpen, setIsXOGameOpen] = useState(false);
   const [isConfigOpen, setIsConfigOpen] = useState(false);
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const [isCommandsModalOpen, setIsCommandsModalOpen] = useState(false);
   
   // Member Select Modal state
   const [memberSelectConfig, setMemberSelectConfig] = useState<{
@@ -538,6 +542,26 @@ export default function App() {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Algerian AI Chat Button */}
+          <button
+            onClick={() => setIsAiModalOpen(true)}
+            className="px-2.5 py-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded text-xs font-semibold flex items-center gap-1.5 transition-all shadow-md shadow-emerald-950/40 cursor-pointer"
+            title="تحدث مع البوت كإنسان حقيقي بالدارجة الجزائرية"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-yellow-300" />
+            <span>الذكاء الجزائري 🇩🇿</span>
+          </button>
+
+          {/* 50+ Commands Guide Button */}
+          <button
+            onClick={() => setIsCommandsModalOpen(true)}
+            className="px-2.5 py-1 bg-[#2b2d31] hover:bg-[#35373c] border border-cyan-500/30 hover:border-cyan-500/60 text-cyan-300 hover:text-white rounded text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+            title="تصفح قائمة الأوامر الـ 50 الكاملة"
+          >
+            <Terminal className="w-3.5 h-3.5 text-cyan-400" />
+            <span>الأوامر (50+)</span>
+          </button>
+
           <button
             onClick={() => setShowConsole(!showConsole)}
             className={`px-2.5 py-1 rounded text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer ${
@@ -701,6 +725,17 @@ export default function App() {
         config={config}
         onClose={() => setIsConfigOpen(false)}
         onSaveConfig={handleSaveConfig}
+      />
+
+      <AlgerianAiModal
+        isOpen={isAiModalOpen}
+        onClose={() => setIsAiModalOpen(false)}
+        userName={currentUser.name}
+      />
+
+      <CommandsListModal
+        isOpen={isCommandsModalOpen}
+        onClose={() => setIsCommandsModalOpen(false)}
       />
     </div>
   );

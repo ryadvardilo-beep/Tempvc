@@ -50,6 +50,7 @@ jobs:
       - name: Run Discord Bot with Self-Restart Loop
         env:
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           PORT: 3000
         run: |
           echo "🚀 Starting Discord Bot 24/7 on GitHub Actions..."
