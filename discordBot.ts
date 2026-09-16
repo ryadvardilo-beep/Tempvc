@@ -197,29 +197,33 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
         },
       ];
 
-      // Merge with 50+ expanded commands
-      const registrySlashCommands = COMMANDS_REGISTRY.map((cmd) => ({
-        name: cmd.name,
-        description: cmd.description,
-        options: cmd.options || [],
-      }));
+      // Merge with 50+ expanded commands without duplicates
+      const uniqueCommandsMap = new Map<string, any>();
+      for (const cmd of [...coreSlashCommands, ...COMMANDS_REGISTRY]) {
+        if (!uniqueCommandsMap.has(cmd.name.toLowerCase())) {
+          uniqueCommandsMap.set(cmd.name.toLowerCase(), {
+            name: cmd.name.toLowerCase(),
+            description: cmd.description,
+            options: cmd.options || [],
+          });
+        }
+      }
+      const allSlashCommands = Array.from(uniqueCommandsMap.values());
 
-      const allSlashCommands = [...coreSlashCommands, ...registrySlashCommands];
-
-      // 1. Register instantly to each guild so slash commands appear immediately without waiting 1 hour!
+      // 1. Clear any guild-specific commands so they don't show up twice alongside global commands!
       for (const guild of client.guilds.cache.values()) {
         try {
-          await guild.commands.set(allSlashCommands);
-          console.log(`[Discord Bot] Instant slash commands registered in guild: ${guild.name} (${allSlashCommands.length} commands)`);
+          await guild.commands.set([]); // Clears guild-scoped duplicate commands
+          console.log(`[Discord Bot] Cleared guild-scoped commands in: ${guild.name} to avoid duplicates`);
         } catch (gErr: any) {
-          console.warn(`[Discord Bot] Couldn't register slash commands directly in guild ${guild.name}:`, gErr.message);
+          console.warn(`[Discord Bot] Couldn't clear guild commands in ${guild.name}:`, gErr.message);
         }
       }
 
-      // 2. Also register globally for all servers
+      // 2. Register once globally across Discord
       await client.application?.commands.set(allSlashCommands);
-      console.log(`[Discord Bot] ${allSlashCommands.length} Slash Commands successfully registered globally and per-guild!`);
-      ctx.addLog('info', `تم تسجيل ${allSlashCommands.length} أمراً تفاعلياً (Slash Commands) في السيرفرات بنجاح فوراً`);
+      console.log(`[Discord Bot] ${allSlashCommands.length} unique Slash Commands registered globally!`);
+      ctx.addLog('info', `تم ضبط ${allSlashCommands.length} أمراً فريداً (Slash Commands) ومنع التكرار نهائياً`);
     } catch (cmdRegErr: any) {
       console.error('[Discord Bot] Failed to register slash commands:', cmdRegErr.message);
     }

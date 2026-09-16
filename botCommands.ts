@@ -586,30 +586,55 @@ export const COMMANDS_REGISTRY: CommandDef[] = [
   },
   {
     name: 'nuke',
-    description: '💥 إعادة تدوير وتطهير الشات بالكامل ومسح كل الرسائل القديمة (للسطاف)',
+    description: '💥 تطهير وحذف آخر الرسائل (رسالتين افتراضياً، أو حسب العدد المحدد)',
     category: 'moderation',
+    options: [
+      {
+        name: 'amount',
+        description: 'عدد الرسائل المراد حذفها (افتراضياً 2 إذا لم تحدد)',
+        type: 4, // INTEGER
+        required: false,
+      },
+    ],
     executeSlash: async (interaction) => {
       const member = interaction.member as GuildMember;
-      if (!member.permissions.has(PermissionFlagsBits.ManageChannels)) {
-        return interaction.reply({ content: '❌ لا تملك صلاحية `Manage Channels`!', ephemeral: true });
+      if (
+        !member.permissions.has(PermissionFlagsBits.ManageMessages) &&
+        !member.permissions.has(PermissionFlagsBits.ManageChannels)
+      ) {
+        return interaction.reply({ content: '❌ لا تملك صلاحية `Manage Messages` أو `Manage Channels`!', ephemeral: true });
       }
+      const rawAmount = interaction.options.getInteger('amount');
+      const count = rawAmount ? Math.min(Math.max(rawAmount, 1), 100) : 2;
       const channel = interaction.channel as TextChannel;
-      const position = channel.position;
-      const newChannel = await channel.clone();
-      await channel.delete();
-      await newChannel.setPosition(position);
-      await newChannel.send('💥 **تم تطهير الشات بنجاح وإعادة تدويره!** https://i.imgur.com/bvh29zT.png');
+      const deleted = await channel.bulkDelete(count, true);
+      await interaction.reply({
+        content: `💥 **تم التطهير بنجاح!** تم حذف **${deleted.size}** رسالة.`,
+        ephemeral: true,
+      });
     },
-    executeText: async (message) => {
-      if (!message.member?.permissions.has(PermissionFlagsBits.ManageChannels)) {
-        return message.reply('❌ لا تملك صلاحية `Manage Channels`!');
+    executeText: async (message, args) => {
+      if (
+        !message.member?.permissions.has(PermissionFlagsBits.ManageMessages) &&
+        !message.member?.permissions.has(PermissionFlagsBits.ManageChannels)
+      ) {
+        return message.reply('❌ لا تملك صلاحية `Manage Messages` أو `Manage Channels`!');
       }
       const channel = message.channel as TextChannel;
-      const position = channel.position;
-      const newChannel = await channel.clone();
-      await channel.delete();
-      await newChannel.setPosition(position);
-      await newChannel.send('💥 **تم تصفير وتطهير الشات بنجاح!**');
+      
+      // Parse requested amount. If not provided or invalid, default to 2 (plus the command message itself)
+      let count = 2;
+      if (args[0] && !isNaN(parseInt(args[0], 10))) {
+        count = Math.min(Math.max(parseInt(args[0], 10), 1), 100);
+      }
+
+      // First delete the command message itself
+      await message.delete().catch(() => {});
+
+      // Delete the requested number of target messages
+      const deleted = await channel.bulkDelete(count, true);
+      const notice = await channel.send(`💥 **تم التطهير بنجاح!** تم مسح **${deleted.size}** رسالة.`);
+      setTimeout(() => notice.delete().catch(() => {}), 3500);
     },
   },
 
