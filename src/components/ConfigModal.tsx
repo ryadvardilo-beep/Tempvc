@@ -152,6 +152,87 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({
               </p>
             </div>
 
+            {/* AI Control for Staff / Owner */}
+            <div className="bg-[#1e1f22] p-3.5 rounded-lg border border-emerald-500/40 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-white font-bold text-xs flex items-center gap-1.5">
+                    <span>🧠 تحكم الذكاء الاصطناعي (خاص بالسطاف والأونر)</span>
+                  </h4>
+                  <p className="text-[11px] text-zinc-400 mt-0.5">
+                    تفعيل أو إيقاف الذكاء بالكامل أو حصره في روم شات محدد لمنع الإزعاج.
+                  </p>
+                </div>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${config.aiEnabled !== false ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-red-500/20 text-red-300 border-red-500/30'}`}>
+                  {config.aiEnabled !== false ? 'مفعل' : 'معطل'}
+                </span>
+              </div>
+
+              <div className="flex flex-wrap gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const nextState = config.aiEnabled === false ? true : false;
+                    try {
+                      const res = await fetch('/api/ai/control', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ enabled: nextState }),
+                      });
+                      const d = await res.json();
+                      if (d.success) {
+                        alert(nextState ? '✅ تم تفعيل الذكاء الاصطناعي في السيرفر!' : '🛑 تم إيقاف الذكاء الاصطناعي في السيرفر!');
+                        window.location.reload();
+                      }
+                    } catch (e: any) {
+                      alert('خطأ: ' + e.message);
+                    }
+                  }}
+                  className={`text-xs px-3 py-1.5 rounded font-medium transition cursor-pointer ${
+                    config.aiEnabled !== false
+                      ? 'bg-red-600/80 hover:bg-red-600 text-white'
+                      : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                  }`}
+                >
+                  {config.aiEnabled !== false ? 'إيقاف الذكاء الاصطناعي 🛑' : 'تشغيل الذكاء الاصطناعي ✅'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const ch = prompt('أدخل ID قناة الشات التي تريد حصر الذكاء فيها (أو اتركه فارغاً للسماح في كل القنوات):', config.allowedAiChannelId || '');
+                    if (ch === null) return;
+                    try {
+                      const res = await fetch('/api/ai/control', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ channelId: ch.trim() || null }),
+                      });
+                      const d = await res.json();
+                      if (d.success) {
+                        alert(d.allowedAiChannelId ? `✅ تم حصر الذكاء في القناة: ${d.allowedAiChannelId}` : '✅ تم السماح بالذكاء في جميع القنوات');
+                        window.location.reload();
+                      }
+                    } catch (e: any) {
+                      alert('خطأ: ' + e.message);
+                    }
+                  }}
+                  className="text-xs bg-[#2b2d31] hover:bg-[#35373c] text-emerald-300 border border-emerald-500/30 px-3 py-1.5 rounded transition cursor-pointer font-medium"
+                >
+                  {config.allowedAiChannelId ? `محصور في (${config.allowedAiChannelId}) • تعديل` : 'تحديد روم مخصص للذكاء 🎯'}
+                </button>
+              </div>
+
+              <div className="bg-[#111214] p-2 rounded border border-zinc-800 text-[11px] text-zinc-400">
+                💬 <strong>أوامر الشات للسطاف أيضاً:</strong>
+                <div className="mt-1 font-mono text-[10px] text-emerald-300 space-y-0.5">
+                  <div>• <code>!aichannel set #channel</code> (حصر الذكاء في هذه القناة)</div>
+                  <div>• <code>!aichannel all</code> (تشغيله في كل الرومات)</div>
+                  <div>• <code>!aichannel off</code> (إيقاف الذكاء مؤقتاً)</div>
+                </div>
+              </div>
+            </div>
+
             {/* Bot Token Direct Connection */}
             <div className="bg-[#2b2d31] p-3 rounded-lg border border-cyan-500/30 space-y-2">
               <label className="block text-xs font-bold uppercase tracking-wider text-cyan-300">

@@ -38,6 +38,8 @@ export interface BotSharedContext {
     botTag: string;
     pingMs: number;
     bannerUrl?: string;
+    aiEnabled?: boolean;
+    allowedAiChannelId?: string | null;
   };
   activeTempVCs: Record<string, any>;
   xoGames: Record<string, any>;
@@ -437,6 +439,18 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
 
       // ---------- AI INTERACTION ON BOT MENTION (Algerian Darja Persona) ----------
       if (wasBotMentioned && (!content.startsWith('!') && !content.startsWith('?') && !content.startsWith('/'))) {
+        // Check if AI is disabled by Staff
+        if (ctx.config.aiEnabled === false) {
+          await message.reply('🛑 الذكاء الاصطناعي موقوف حالياً في السيرفر بقرار من الإدارة.').catch(() => {});
+          return;
+        }
+
+        // Check if AI is locked to a specific channel
+        if (ctx.config.allowedAiChannelId && ctx.config.allowedAiChannelId !== message.channel.id) {
+          await message.reply(`⚠️ محادثات الذكاء الاصطناعي مسموحة فقط في الروم المخصص: <#${ctx.config.allowedAiChannelId}> تفادياً للإزعاج.`).catch(() => {});
+          return;
+        }
+
         // User tagged the bot with a natural conversational sentence!
         const prompt = content || 'السلام عليكم يا خويا واش راك؟';
         await message.channel.sendTyping().catch(() => {});
@@ -636,11 +650,40 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
         return;
       }
 
-      // ---------- 5. DISPATCH TO 50+ REGISTRY TEXT COMMANDS (!cmd or ?cmd) ----------
-      const prefixMatch = content.match(/^[!?]([a-zA-Z0-9_-]+)(?:\s+(.*))?$/s);
+      // ---------- 5. DISPATCH TO 50+ REGISTRY TEXT COMMANDS (!cmd or ?cmd) + ARABIC SHORTCUTS ----------
+      const prefixMatch = content.match(/^[!?]([^\s]+)(?:\s+(.*))?$/s);
       if (prefixMatch) {
-        const cmdName = prefixMatch[1].toLowerCase();
+        let cmdName = prefixMatch[1].toLowerCase();
         const rawArgs = prefixMatch[2] ? prefixMatch[2].trim().split(/\s+/) : [];
+
+        // Arabic shortcuts mapping
+        const arabicAliases: Record<string, string> = {
+          'بلع': 'lockchat',
+          'قفل': 'lockchat',
+          'حل': 'unlockchat',
+          'فتح': 'unlockchat',
+          'اسكت': 'mute',
+          'كتم': 'mute',
+          'تكلم': 'unmute',
+          'فك': 'unmute',
+          'طرد': 'kick',
+          'بند': 'ban',
+          'حظر': 'ban',
+          'فك_حظر': 'unban',
+          'تحذير': 'warn',
+          'انذار': 'warn',
+          'مسح': 'clear',
+          'تطهير': 'nuke',
+          'سلومود': 'slowmode',
+          'ذكاء': 'ai',
+          'تحكم_الذكاء': 'aichannel',
+          'قناة_الذكاء': 'aichannel',
+        };
+
+        if (arabicAliases[cmdName]) {
+          cmdName = arabicAliases[cmdName];
+        }
+
         const foundCmd = COMMANDS_REGISTRY.find((c) => c.name.toLowerCase() === cmdName);
         if (foundCmd && foundCmd.executeText) {
           try {

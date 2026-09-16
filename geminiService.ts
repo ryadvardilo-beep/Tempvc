@@ -54,24 +54,41 @@ export async function getAlgerianAiResponse(
     // Format conversation history if available
     const promptWithUser = `المستخدم اسمه [${userName}]: ${userPrompt}`;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
-      contents: promptWithUser,
-      config: {
-        systemInstruction: SYSTEM_PROMPT,
-        temperature: 0.85,
-        topP: 0.95,
-      },
-    });
+    // Array of fallback models in case gemini-3.8-flash has a temporary 503 high demand spike
+    const modelsToTry = ['gemini-3.8-flash', 'gemini-3.1-flash-lite', 'gemini-flash-latest'];
+    let lastError: any = null;
 
-    const reply = response.text?.trim();
-    if (!reply) {
-      return `صحا خويا ${userName}، ما فهمتش مليح ولا كان فما انقطاع خفيف، عاودلي برك واش قلتلي ربي يبارك فيك!`;
+    for (const modelName of modelsToTry) {
+      try {
+        const response = await ai.models.generateContent({
+          model: modelName,
+          contents: promptWithUser,
+          config: {
+            systemInstruction: SYSTEM_PROMPT,
+            temperature: 0.85,
+            topP: 0.95,
+          },
+        });
+
+        const reply = response.text?.trim();
+        if (reply) {
+          return reply;
+        }
+      } catch (err: any) {
+        lastError = err;
+        console.warn(`[Gemini AI] Model ${modelName} failed or busy, trying next model:`, err.message || err);
+      }
     }
 
-    return reply;
+    // If all models encountered heavy demand
+    const darjaBusyResponses = [
+      `أهلاً خويا ${userName}! واش راك لاباس؟ سيرفرات قوقل راهي عليها ضغط كبير درك (High demand)، دقيقة برك وعاود سقسيني يا الغالي وراني هنا خوك نجاوبك!`,
+      `صحا خويا ${userName}، راني نسمع فيك، كاين شوية شارج وضغط على الذكاء الاصطناعي في هاذ اللحظة، اصبر عليا دقيقة وعاود المنشن ويكون كلش مليح إن شاء الله!`,
+      `يعطيك الصحة خويا ${userName}، راهو فما ضغط خفيف في قوقل، دقيقة ونكون معاك يا الزين!`
+    ];
+    return darjaBusyResponses[Math.floor(Math.random() * darjaBusyResponses.length)];
   } catch (error: any) {
     console.error('[Gemini AI Error]', error);
-    return `يا خويا ${userName}، صار مشكل تقني خفيف في الاتصال بالذكاء الاصطناعي (${error.message || 'خطأ'}). دقيقة وعاودلي يا الغالي!`;
+    return `يا خويا ${userName}، صار مشكل تقني خفيف في الاتصال، دقيقة وعاودلي يا الغالي!`;
   }
 }

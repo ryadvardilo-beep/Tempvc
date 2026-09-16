@@ -39,6 +39,8 @@ export interface BotConfig {
   isLiveBotConnected: boolean;
   botTag?: string;
   pingMs: number;
+  aiEnabled?: boolean;
+  allowedAiChannelId?: string | null;
 }
 
 export interface BotLog {

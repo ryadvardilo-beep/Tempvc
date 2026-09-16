@@ -370,273 +370,246 @@ export const COMMANDS_REGISTRY: CommandDef[] = [
     },
   },
 
-  // ==================== 4. VOICE & TEMP VC COMMANDS (17-27) ====================
+  // ==================== 4. MODERATION & STAFF SUITE (STAFF & OWNER FOCUS) ====================
   {
-    name: 'lock',
-    description: 'قفل الروم الصوتي الحالي لمنع الدخول',
-    category: 'voice',
-    executeSlash: async (interaction, ctx) => {
-      const member = interaction.member as GuildMember;
-      const vc = member.voice.channel as VoiceChannel;
-      if (!vc) return interaction.reply({ content: '❌ ادخل لرومك الصوتي أولاً!', ephemeral: true });
-      await vc.permissionOverwrites.edit(interaction.guild!.id, { Connect: false });
-      if (ctx.activeTempVCs[vc.id]) ctx.activeTempVCs[vc.id].isLocked = true;
-      await interaction.reply({ content: '🔒 تم قفل الروم الصوتي بنجاح!', ephemeral: true });
-    },
-    executeText: async (message, _, ctx) => {
-      const member = message.member;
-      const vc = member?.voice?.channel as VoiceChannel;
-      if (!vc) return message.reply('❌ ادخل لرومك الصوتي أولاً!');
-      await vc.permissionOverwrites.edit(message.guild!.id, { Connect: false });
-      if (ctx.activeTempVCs[vc.id]) ctx.activeTempVCs[vc.id].isLocked = true;
-      await message.reply('🔒 تم قفل الروم الصوتي بنجاح!');
-    },
-  },
-  {
-    name: 'unlock',
-    description: 'فتح الروم الصوتي للجميع',
-    category: 'voice',
-    executeSlash: async (interaction, ctx) => {
-      const member = interaction.member as GuildMember;
-      const vc = member.voice.channel as VoiceChannel;
-      if (!vc) return interaction.reply({ content: '❌ ادخل لرومك الصوتي أولاً!', ephemeral: true });
-      await vc.permissionOverwrites.edit(interaction.guild!.id, { Connect: true });
-      if (ctx.activeTempVCs[vc.id]) ctx.activeTempVCs[vc.id].isLocked = false;
-      await interaction.reply({ content: '🔓 تم فتح الروم الصوتي للجميع!', ephemeral: true });
-    },
-    executeText: async (message, _, ctx) => {
-      const member = message.member;
-      const vc = member?.voice?.channel as VoiceChannel;
-      if (!vc) return message.reply('❌ ادخل لرومك الصوتي أولاً!');
-      await vc.permissionOverwrites.edit(message.guild!.id, { Connect: true });
-      if (ctx.activeTempVCs[vc.id]) ctx.activeTempVCs[vc.id].isLocked = false;
-      await message.reply('🔓 تم فتح الروم الصوتي للجميع!');
-    },
-  },
-  {
-    name: 'rename',
-    description: 'تغيير اسم رومك الصوتي',
-    category: 'voice',
-    options: [{ name: 'name', description: 'الاسم الجديد', type: 3, required: true }],
-    executeSlash: async (interaction, ctx) => {
-      const member = interaction.member as GuildMember;
-      const vc = member.voice.channel as VoiceChannel;
-      if (!vc) return interaction.reply({ content: '❌ ادخل لرومك الصوتي أولاً!', ephemeral: true });
-      const newName = interaction.options.getString('name', true);
-      await vc.setName(newName);
-      if (ctx.activeTempVCs[vc.id]) ctx.activeTempVCs[vc.id].name = newName;
-      await interaction.reply({ content: `✏️ تم تغيير اسم الروم الصوتي إلى: **${newName}**`, ephemeral: true });
-    },
-    executeText: async (message, args, ctx) => {
-      const member = message.member;
-      const vc = member?.voice?.channel as VoiceChannel;
-      if (!vc) return message.reply('❌ ادخل لرومك الصوتي أولاً!');
-      const newName = args.join(' ');
-      if (!newName) return message.reply('اكتب الاسم الجديد بعد الأمر. مثال: `!rename صالون الأصدقاء`');
-      await vc.setName(newName);
-      if (ctx.activeTempVCs[vc.id]) ctx.activeTempVCs[vc.id].name = newName;
-      await message.reply(`✏️ تم تغيير اسم الروم إلى: **${newName}**`);
-    },
-  },
-  {
-    name: 'limit',
-    description: 'تحديد سعة الروم الصوتي (عدد الأشخاص)',
-    category: 'voice',
-    options: [{ name: 'count', description: 'العدد (0-99)', type: 4, required: true }],
-    executeSlash: async (interaction, ctx) => {
-      const member = interaction.member as GuildMember;
-      const vc = member.voice.channel as VoiceChannel;
-      if (!vc) return interaction.reply({ content: '❌ ادخل لرومك الصوتي أولاً!', ephemeral: true });
-      const limit = interaction.options.getInteger('count', true);
-      await vc.setUserLimit(limit);
-      if (ctx.activeTempVCs[vc.id]) ctx.activeTempVCs[vc.id].userLimit = limit;
-      await interaction.reply({ content: `🔢 تم تحديد سعة الروم إلى: **${limit === 0 ? 'مفتوح' : limit}**`, ephemeral: true });
-    },
-    executeText: async (message, args, ctx) => {
-      const member = message.member;
-      const vc = member?.voice?.channel as VoiceChannel;
-      if (!vc) return message.reply('❌ ادخل لرومك الصوتي أولاً!');
-      const num = parseInt(args[0] || '0', 10);
-      await vc.setUserLimit(num);
-      if (ctx.activeTempVCs[vc.id]) ctx.activeTempVCs[vc.id].userLimit = num;
-      await message.reply(`🔢 تم ضبط سعة الروم إلى: **${num === 0 ? 'مفتوح' : num}**`);
-    },
-  },
-  {
-    name: 'vcinfo',
-    description: 'عرض معلومات وإحصائيات الروم الصوتي',
-    category: 'voice',
-    executeSlash: async (interaction, ctx) => {
-      const member = interaction.member as GuildMember;
-      const vc = member.voice.channel as VoiceChannel;
-      if (!vc) return interaction.reply({ content: '❌ ادخل لروم صوتي أولاً!', ephemeral: true });
-      const temp = ctx.activeTempVCs[vc.id];
-      const embed = new EmbedBuilder()
-        .setColor(0x00e5ff)
-        .setTitle(`🔊 معلومات الروم: ${vc.name}`)
-        .addFields(
-          { name: '👑 المالك', value: temp ? `<@${temp.ownerId}>` : 'غير مسجل', inline: true },
-          { name: '👥 المتواجدين', value: `${vc.members.size}`, inline: true },
-          { name: '🔒 الحالة', value: temp?.isLocked ? 'مقفل 🔒' : 'مفتوح 🔓', inline: true },
-          { name: '🔢 السعة', value: `${vc.userLimit || 'غير محددة'}`, inline: true }
-        );
-      await interaction.reply({ embeds: [embed] });
-    },
-    executeText: async (message, _, ctx) => {
-      const member = message.member;
-      const vc = member?.voice?.channel as VoiceChannel;
-      if (!vc) return message.reply('❌ ادخل لروم صوتي أولاً!');
-      const temp = ctx.activeTempVCs[vc.id];
-      const embed = new EmbedBuilder()
-        .setColor(0x00e5ff)
-        .setTitle(`🔊 معلومات الروم: ${vc.name}`)
-        .addFields(
-          { name: '👑 المالك', value: temp ? `<@${temp.ownerId}>` : 'غير مسجل', inline: true },
-          { name: '👥 المتواجدين', value: `${vc.members.size}`, inline: true },
-          { name: '🔒 الحالة', value: temp?.isLocked ? 'مقفل 🔒' : 'مفتوح 🔓', inline: true },
-          { name: '🔢 السعة', value: `${vc.userLimit || 'غير محددة'}`, inline: true }
-        );
-      await message.reply({ embeds: [embed] });
-    },
-  },
-  {
-    name: 'claim',
-    description: 'استلام ملكية الروم الصوتي في حال خروج المالك الأصلي',
-    category: 'voice',
-    executeSlash: async (interaction, ctx) => {
-      const member = interaction.member as GuildMember;
-      const vc = member.voice.channel as VoiceChannel;
-      if (!vc) return interaction.reply({ content: '❌ يجب أن تكون داخل الروم!', ephemeral: true });
-      const temp = ctx.activeTempVCs[vc.id];
-      if (!temp) return interaction.reply({ content: '❌ هذا الروم ليس روماً مؤقتاً!', ephemeral: true });
-      const ownerStillInside = vc.members.has(temp.ownerId);
-      if (ownerStillInside && temp.ownerId !== member.id) {
-        return interaction.reply({ content: '❌ المالك الأصلي ما زال متواجداً بالروم!', ephemeral: true });
-      }
-      temp.ownerId = member.id;
-      temp.ownerName = member.displayName;
-      await interaction.reply(`👑 مبارك! أصبحت المالك الجديد للروم الصوتي <#${vc.id}>.`);
-    },
-    executeText: async (message, _, ctx) => {
-      const member = message.member;
-      const vc = member?.voice?.channel as VoiceChannel;
-      if (!vc) return message.reply('❌ يجب أن تكون داخل الروم!');
-      const temp = ctx.activeTempVCs[vc.id];
-      if (!temp) return message.reply('❌ هذا الروم ليس روماً مؤقتاً!');
-      const ownerStillInside = vc.members.has(temp.ownerId);
-      if (ownerStillInside && temp.ownerId !== member?.id) {
-        return message.reply('❌ المالك الأصلي ما زال متواجداً بالروم!');
-      }
-      temp.ownerId = member!.id;
-      temp.ownerName = member!.displayName;
-      await message.reply(`👑 مبارك! أصبحت المالك الجديد للروم الصوتي <#${vc.id}>.`);
-    },
-  },
-  {
-    name: 'vckick',
-    description: 'طرد عضو متواجد داخل رومك الصوتي',
-    category: 'voice',
-    options: [{ name: 'user', description: 'العضو المراد طرده', type: 6, required: true }],
+    name: 'lockchat',
+    description: '🔒 قفل الشات الكتابي ومنع الأعضاء من الكتابة (!بلع أو !lockchat)',
+    category: 'moderation',
     executeSlash: async (interaction) => {
+      const member = interaction.member as GuildMember;
+      if (!member.permissions.has(PermissionFlagsBits.ManageChannels)) {
+        return interaction.reply({ content: '❌ لا تملك صلاحية `Manage Channels`!', ephemeral: true });
+      }
+      const channel = interaction.channel as TextChannel;
+      await channel.permissionOverwrites.edit(interaction.guild!.id, { SendMessages: false });
+      await interaction.reply('🔒 **تم بلع (قفل) هذه القناة الكتابية ومنع الكتابة فيها مؤقتاً.**');
+    },
+    executeText: async (message) => {
+      if (!message.member?.permissions.has(PermissionFlagsBits.ManageChannels)) {
+        return message.reply('❌ لا تملك صلاحية `Manage Channels`!');
+      }
+      const channel = message.channel as TextChannel;
+      await channel.permissionOverwrites.edit(message.guild!.id, { SendMessages: false });
+      await message.reply('🔒 **تم بلع الشات وقفل الإرسال للجميع!**');
+    },
+  },
+  {
+    name: 'unlockchat',
+    description: '🔓 فتح الشات الكتابي والسماح للجميع بالكتابة (!حل أو !unlockchat)',
+    category: 'moderation',
+    executeSlash: async (interaction) => {
+      const member = interaction.member as GuildMember;
+      if (!member.permissions.has(PermissionFlagsBits.ManageChannels)) {
+        return interaction.reply({ content: '❌ لا تملك صلاحية `Manage Channels`!', ephemeral: true });
+      }
+      const channel = interaction.channel as TextChannel;
+      await channel.permissionOverwrites.edit(interaction.guild!.id, { SendMessages: true });
+      await interaction.reply('🔓 **تم فتح الشات الكتابي والسماح للجميع بالمحادثة.**');
+    },
+    executeText: async (message) => {
+      if (!message.member?.permissions.has(PermissionFlagsBits.ManageChannels)) {
+        return message.reply('❌ لا تملك صلاحية `Manage Channels`!');
+      }
+      const channel = message.channel as TextChannel;
+      await channel.permissionOverwrites.edit(message.guild!.id, { SendMessages: true });
+      await message.reply('🔓 **تم فتح الشات والسماح بالكتابة مجدداً!**');
+    },
+  },
+  {
+    name: 'mute',
+    description: '🔇 إعطاء تايم أوت / كتم لعضو في السيرفر (!اسكت أو !mute)',
+    category: 'moderation',
+    options: [
+      { name: 'user', description: 'العضو المراد كتمه', type: 6, required: true },
+      { name: 'minutes', description: 'المدة بالدقائق (مثلاً: 10)', type: 4, required: false },
+      { name: 'reason', description: 'السبب', type: 3, required: false },
+    ],
+    executeSlash: async (interaction) => {
+      const member = interaction.member as GuildMember;
+      if (!member.permissions.has(PermissionFlagsBits.ModerateMembers)) {
+        return interaction.reply({ content: '❌ لا تملك صلاحية إعطاء تايم أوت `Moderate Members`!', ephemeral: true });
+      }
       const targetUser = interaction.options.getUser('user', true);
-      const member = interaction.member as GuildMember;
-      const vc = member.voice.channel as VoiceChannel;
-      if (!vc) return interaction.reply({ content: '❌ ادخل لرومك الصوتي أولاً!', ephemeral: true });
-      const targetMember = vc.members.get(targetUser.id);
-      if (!targetMember) return interaction.reply({ content: 'العضو غير متواجد داخل الروم!', ephemeral: true });
-      await targetMember.voice.disconnect();
-      await interaction.reply(`📞 تم طرد <@${targetUser.id}> من الروم الصوتي!`);
-    },
-    executeText: async (message) => {
-      const target = message.mentions.members?.first();
-      if (!target) return message.reply('منشن العضو المراد طرده: `!vckick @user`');
-      await target.voice.disconnect().catch(() => {});
-      await message.reply(`📞 تم طرد <@${target.id}> من الروم!`);
-    },
-  },
-  {
-    name: 'invite',
-    description: 'إنشاء رابط دعوة سريع ومباشر لرومك الصوتي',
-    category: 'voice',
-    executeSlash: async (interaction) => {
-      const member = interaction.member as GuildMember;
-      const vc = member.voice.channel as VoiceChannel;
-      if (!vc) return interaction.reply({ content: '❌ ادخل لروم صوتي أولاً!', ephemeral: true });
-      const invite = await vc.createInvite({ maxAge: 3600, maxUses: 10 });
-      await interaction.reply({ content: `📢 رابط الدعوة لرومك الصوتي:\n${invite.url}`, ephemeral: true });
-    },
-    executeText: async (message) => {
-      const member = message.member;
-      const vc = member?.voice?.channel as VoiceChannel;
-      if (!vc) return message.reply('❌ ادخل لروم صوتي أولاً!');
-      const invite = await vc.createInvite({ maxAge: 3600, maxUses: 10 });
-      await message.reply(`📢 رابط الدعوة لرومك الصوتي:\n${invite.url}`);
-    },
-  },
-  {
-    name: 'bitrate',
-    description: 'ضبط جودة الصوت في الروم الصوتي (Bitrate)',
-    category: 'voice',
-    options: [{ name: 'kbps', description: 'الجودة (8 إلى 96)', type: 4, required: true }],
-    executeSlash: async (interaction) => {
-      const member = interaction.member as GuildMember;
-      const vc = member.voice.channel as VoiceChannel;
-      if (!vc) return interaction.reply({ content: '❌ ادخل لروم صوتي أولاً!', ephemeral: true });
-      const kbps = Math.min(Math.max(interaction.options.getInteger('kbps', true), 8), 96);
-      await vc.setBitrate(kbps * 1000);
-      await interaction.reply(`🔊 تم ضبط جودة الصوت إلى: **${kbps} kbps**`);
+      const minutes = interaction.options.getInteger('minutes') || 10;
+      const reason = interaction.options.getString('reason') || 'مخالفة قوانين السيرفر';
+      const targetMember = interaction.guild!.members.cache.get(targetUser.id);
+      if (!targetMember) return interaction.reply({ content: 'العضو غير موجود بالسيرفر!', ephemeral: true });
+      if (targetMember.permissions.has(PermissionFlagsBits.Administrator)) {
+        return interaction.reply({ content: '❌ لا يمكنك كتم إداري!', ephemeral: true });
+      }
+      await targetMember.timeout(minutes * 60 * 1000, reason);
+      await interaction.reply(`🔇 **تم كتم العضو <@${targetUser.id}> لمدة ${minutes} دقيقة.**\nالسبب: *${reason}*`);
     },
     executeText: async (message, args) => {
-      const member = message.member;
-      const vc = member?.voice?.channel as VoiceChannel;
-      if (!vc) return message.reply('❌ ادخل لروم صوتي أولاً!');
-      const kbps = Math.min(Math.max(parseInt(args[0] || '64', 10), 8), 96);
-      await vc.setBitrate(kbps * 1000);
-      await message.reply(`🔊 تم ضبط جودة الصوت إلى: **${kbps} kbps**`);
+      if (!message.member?.permissions.has(PermissionFlagsBits.ModerateMembers)) {
+        return message.reply('❌ لا تملك صلاحية `Moderate Members`!');
+      }
+      const target = message.mentions.members?.first();
+      if (!target) return message.reply('منشن العضو المراد كتمه: `!mute @user 10 السبب`');
+      if (target.permissions.has(PermissionFlagsBits.Administrator)) {
+        return message.reply('❌ لا يمكنك كتم إداري بالسيرفر!');
+      }
+      const minutes = parseInt(args[1] || '10', 10);
+      const reason = args.slice(2).join(' ') || 'مخالفة قوانين السيرفر';
+      await target.timeout(minutes * 60 * 1000, reason);
+      await message.reply(`🔇 **تم كتم <@${target.id}> (Timeout) لمدة ${minutes} دقيقة.**`);
     },
   },
   {
-    name: 'vcmute',
-    description: 'كتم عضو داخل الروم الصوتي (للمالك أو الإدارة)',
-    category: 'voice',
-    options: [{ name: 'user', description: 'العضو المراد كتمه', type: 6, required: true }],
+    name: 'unmute',
+    description: '🔊 فك الكتم / التايم أوت عن عضو (!تكلم أو !unmute)',
+    category: 'moderation',
+    options: [{ name: 'user', description: 'العضو المراد فك كتمه', type: 6, required: true }],
     executeSlash: async (interaction) => {
-      const targetUser = interaction.options.getUser('user', true);
       const member = interaction.member as GuildMember;
-      const vc = member.voice.channel as VoiceChannel;
-      if (!vc) return interaction.reply({ content: '❌ ادخل لروم صوتي أولاً!', ephemeral: true });
-      const targetMember = vc.members.get(targetUser.id);
-      if (!targetMember) return interaction.reply({ content: 'العضو غير متواجد داخل الروم!', ephemeral: true });
-      await targetMember.voice.setMute(true).catch(() => {});
-      await interaction.reply(`🔇 تم كتم العضو <@${targetUser.id}> في الروم الصوتي.`);
+      if (!member.permissions.has(PermissionFlagsBits.ModerateMembers)) {
+        return interaction.reply({ content: '❌ لا تملك صلاحية `Moderate Members`!', ephemeral: true });
+      }
+      const targetUser = interaction.options.getUser('user', true);
+      const targetMember = interaction.guild!.members.cache.get(targetUser.id);
+      if (!targetMember) return interaction.reply({ content: 'العضو غير موجود بالسيرفر!', ephemeral: true });
+      await targetMember.timeout(null);
+      await interaction.reply(`🔊 **تم فك الكتم عن العضو <@${targetUser.id}> بنجاح.**`);
     },
     executeText: async (message) => {
+      if (!message.member?.permissions.has(PermissionFlagsBits.ModerateMembers)) {
+        return message.reply('❌ لا تملك صلاحية `Moderate Members`!');
+      }
       const target = message.mentions.members?.first();
-      if (!target) return message.reply('منشن العضو المراد كتمه: `!vcmute @user`');
-      await target.voice.setMute(true).catch(() => {});
-      await message.reply(`🔇 تم كتم العضو <@${target.id}>.`);
+      if (!target) return message.reply('منشن العضو: `!unmute @user`');
+      await target.timeout(null);
+      await message.reply(`🔊 **تم فك الكتم عن <@${target.id}> بنجاح.**`);
     },
   },
   {
-    name: 'vcunmute',
-    description: 'إلغاء كتم عضو في الروم الصوتي',
-    category: 'voice',
-    options: [{ name: 'user', description: 'العضو المراد إلغاء كتمه', type: 6, required: true }],
+    name: 'warn',
+    description: '⚠️ توجيه إنذار رسمي لعضو في السيرفر (!تحذير أو !warn)',
+    category: 'moderation',
+    options: [
+      { name: 'user', description: 'العضو المراد تحذيره', type: 6, required: true },
+      { name: 'reason', description: 'سبب التحذير', type: 3, required: true },
+    ],
     executeSlash: async (interaction) => {
-      const targetUser = interaction.options.getUser('user', true);
       const member = interaction.member as GuildMember;
-      const vc = member.voice.channel as VoiceChannel;
-      if (!vc) return interaction.reply({ content: '❌ ادخل لروم صوتي أولاً!', ephemeral: true });
-      const targetMember = vc.members.get(targetUser.id);
-      if (!targetMember) return interaction.reply({ content: 'العضو غير متواجد داخل الروم!', ephemeral: true });
-      await targetMember.voice.setMute(false).catch(() => {});
-      await interaction.reply(`🔊 تم إلغاء كتم العضو <@${targetUser.id}>.`);
+      if (!member.permissions.has(PermissionFlagsBits.ManageMessages)) {
+        return interaction.reply({ content: '❌ لا تملك صلاحيات المشرفين!', ephemeral: true });
+      }
+      const targetUser = interaction.options.getUser('user', true);
+      const reason = interaction.options.getString('reason', true);
+      const embed = new EmbedBuilder()
+        .setColor(0xf59e0b)
+        .setTitle('⚠️ إنذار رسمي من إدارة السيرفر')
+        .setDescription(`تم توجيه إنذار رسمي إلى <@${targetUser.id}>\n\n**السبب:** ${reason}\n**المشرف:** <@${member.id}>`)
+        .setFooter({ text: 'يرجى الالتزام بقوانين السيرفر لتفادي الحظر أو الطرد' });
+      await interaction.reply({ embeds: [embed] });
+      await targetUser.send(`⚠️ لقد تلقيت إنذاراً في سيرفر **${interaction.guild!.name}** بسبب: ${reason}`).catch(() => {});
+    },
+    executeText: async (message, args) => {
+      if (!message.member?.permissions.has(PermissionFlagsBits.ManageMessages)) {
+        return message.reply('❌ لا تملك صلاحيات المشرفين!');
+      }
+      const target = message.mentions.users.first();
+      if (!target) return message.reply('منشن العضو واكتب السبب: `!warn @user السب في الشات`');
+      const reason = args.slice(1).join(' ') || 'مخالفة القوانين';
+      const embed = new EmbedBuilder()
+        .setColor(0xf59e0b)
+        .setTitle('⚠️ إنذار رسمي من إدارة السيرفر')
+        .setDescription(`تم توجيه إنذار رسمي إلى <@${target.id}>\n\n**السبب:** ${reason}\n**المشرف:** <@${message.author.id}>`);
+      await message.channel.send({ embeds: [embed] });
+      await target.send(`⚠️ لقد تلقيت إنذاراً في سيرفر **${message.guild!.name}** بسبب: ${reason}`).catch(() => {});
+    },
+  },
+  {
+    name: 'aichannel',
+    description: '🤖 تحديد القناة المسموح فيها للذكاء الاصطناعي أو تفعيله/تعطيله (للسطاف والاونر)',
+    category: 'moderation',
+    options: [
+      {
+        name: 'action',
+        description: 'الإجراء: set (تحديد القناة الحالية)، enable (تشغيل في كل مكان)، disable (تعطيل كامل)',
+        type: 3,
+        required: true,
+        choices: [
+          { name: 'تحديد هذه القناة فقط (Only This Channel)', value: 'set' },
+          { name: 'تشغيل في كل السيرفر (All Channels)', value: 'enable' },
+          { name: 'تعطيل الذكاء بالكامل (Disable AI)', value: 'disable' },
+        ],
+      },
+    ],
+    executeSlash: async (interaction, ctx) => {
+      const member = interaction.member as GuildMember;
+      const isOwner = interaction.guild!.ownerId === member.id;
+      const isHighStaff = member.permissions.has(PermissionFlagsBits.Administrator) ||
+        member.roles.cache.some((r) => ctx.config.highStaffRoleIds.includes(r.id));
+
+      if (!isOwner && !isHighStaff) {
+        return interaction.reply({ content: '❌ هذا الأمر خاص بالأونر وطاقم الإدارة العليا فقط!', ephemeral: true });
+      }
+
+      const act = interaction.options.getString('action', true);
+      if (act === 'disable') {
+        ctx.config.aiEnabled = false;
+        await interaction.reply('🛑 **تم تعطيل الذكاء الاصطناعي بالكامل في السيرفر بواسطة الإدارة.**');
+      } else if (act === 'enable') {
+        ctx.config.aiEnabled = true;
+        ctx.config.allowedAiChannelId = null;
+        await interaction.reply('🟢 **تم تشغيل الذكاء الاصطناعي في جميع قنوات السيرفر.**');
+      } else if (act === 'set') {
+        ctx.config.aiEnabled = true;
+        ctx.config.allowedAiChannelId = interaction.channelId;
+        await interaction.reply(`🎯 **تم حصر الذكاء الاصطناعي في هذه القناة فقط (<#${interaction.channelId}>). لن يستجيب في القنوات الأخرى تفادياً للإزعاج.**`);
+      }
+    },
+    executeText: async (message, args, ctx) => {
+      const isOwner = message.guild!.ownerId === message.author.id;
+      const isHighStaff = message.member?.permissions.has(PermissionFlagsBits.Administrator) ||
+        message.member?.roles.cache.some((r) => ctx.config.highStaffRoleIds.includes(r.id));
+
+      if (!isOwner && !isHighStaff) {
+        return message.reply('❌ هذا الأمر خاص بالأونر والسطاف فقط!');
+      }
+
+      const sub = (args[0] || '').toLowerCase();
+      if (sub === 'disable' || sub === 'off' || sub === 'حبس' || sub === 'طفي') {
+        ctx.config.aiEnabled = false;
+        await message.reply('🛑 **تم إيقاف الذكاء الاصطناعي في السيرفر بنجاح.**');
+      } else if (sub === 'all' || sub === 'شعل' || sub === 'on') {
+        ctx.config.aiEnabled = true;
+        ctx.config.allowedAiChannelId = null;
+        await message.reply('🟢 **تم تفعيل الذكاء الاصطناعي في كل قنوات السيرفر.**');
+      } else {
+        ctx.config.aiEnabled = true;
+        ctx.config.allowedAiChannelId = message.channel.id;
+        await message.reply(`🎯 **تم قفل الذكاء الاصطناعي ليعمل في هذه القناة فقط (<#${message.channel.id}>).**`);
+      }
+    },
+  },
+  {
+    name: 'nuke',
+    description: '💥 إعادة تدوير وتطهير الشات بالكامل ومسح كل الرسائل القديمة (للسطاف)',
+    category: 'moderation',
+    executeSlash: async (interaction) => {
+      const member = interaction.member as GuildMember;
+      if (!member.permissions.has(PermissionFlagsBits.ManageChannels)) {
+        return interaction.reply({ content: '❌ لا تملك صلاحية `Manage Channels`!', ephemeral: true });
+      }
+      const channel = interaction.channel as TextChannel;
+      const position = channel.position;
+      const newChannel = await channel.clone();
+      await channel.delete();
+      await newChannel.setPosition(position);
+      await newChannel.send('💥 **تم تطهير الشات بنجاح وإعادة تدويره!** https://i.imgur.com/bvh29zT.png');
     },
     executeText: async (message) => {
-      const target = message.mentions.members?.first();
-      if (!target) return message.reply('منشن العضو: `!vcunmute @user`');
-      await target.voice.setMute(false).catch(() => {});
-      await message.reply(`🔊 تم إلغاء كتم العضو <@${target.id}>.`);
+      if (!message.member?.permissions.has(PermissionFlagsBits.ManageChannels)) {
+        return message.reply('❌ لا تملك صلاحية `Manage Channels`!');
+      }
+      const channel = message.channel as TextChannel;
+      const position = channel.position;
+      const newChannel = await channel.clone();
+      await channel.delete();
+      await newChannel.setPosition(position);
+      await newChannel.send('💥 **تم تصفير وتطهير الشات بنجاح!**');
     },
   },
 
@@ -1241,24 +1214,29 @@ export const COMMANDS_REGISTRY: CommandDef[] = [
         .setColor(0x00e5ff)
         .setTitle('📜 دليل أوامر البوت الشامل (50+ أمر)')
         .setDescription(
-          `مرحباً بك! البوت مزود بنظام الرومات الصوتية والذكاء الاصطناعي الجزائري وأوامر إسلامية وثقافية:\n\n` +
+          `مرحباً بك! البوت مزود بنظام الرومات الصوتية بالأزرار، الذكاء الاصطناعي الجزائري، وأقوى أدوات الإشراف والتحكم:\n\n` +
           `🧠 **الذكاء الاصطناعي الجزائري**\n` +
           `• \`/ai [سؤالك]\` أو منشن البوت في أي شات وتكلم معاه بالدارجة مباشرة!\n` +
+          `• \`/aichannel\` للسطاف/الأونر (قفل أو تشغيل الذكاء في قناة معينة)\n` +
           `• \`/nasiha\` (نصيحة أخوية بالدارجة)، \`/tafsir\` (تفسير وفائدة)\n\n` +
+          `🛡️ **أدوات الإشراف والسطاف (Moderation)**\n` +
+          `• \`/lockchat\` (بلع الشات) • \`/unlockchat\` (فتح الشات)\n` +
+          `• \`/mute\` (كتم/تايم أوت) • \`/unmute\` (فك الكتم)\n` +
+          `• \`/kick\` (طرد) • \`/ban\` (حظر) • \`/unban\` (فك الحظر)\n` +
+          `• \`/warn\` (إنذار رسمي) • \`/clear\` (مسح رسائل) • \`/nuke\` (تطهير الشات) • \`/slowmode\`\n\n` +
           `🌿 **الأوامر الإسلامية المباركة**\n` +
           `• \`/quran\` • \`/hadith\` • \`/dhikr\` • \`/prayer\` • \`/dua\` • \`/istighfar\` • \`/salat\` • \`/friday\` • \`/kahf\`\n\n` +
           `🇩🇿 **أمثال وتراث جزائري**\n` +
           `• \`/amthal\` • \`/dz\` • \`/tahia\` • \`/marhaba\`\n\n` +
-          `🔊 **الرومات الصوتية (Temp VC)**\n` +
-          `• \`/setup\` • \`/stay\` • \`/leave\` • \`/lock\` • \`/unlock\` • \`/rename\` • \`/limit\` • \`/vcinfo\` • \`/claim\` • \`/vckick\` • \`/invite\` • \`/bitrate\` • \`/vcmute\` • \`/vcunmute\`\n\n` +
+          `🔊 **الرومات الصوتية التلقائية (Temp VC)**\n` +
+          `• تحكم كامل وفوري بـ 15 زراً تفاعلياً داخل قناة التحكم\n` +
+          `• أوامر: \`/setup\` • \`/stay\` • \`/leave\`\n\n` +
           `🛠️ **أدوات ومعلومات السيرفر**\n` +
           `• \`/serverinfo\` • \`/userinfo\` • \`/avatar\` • \`/botinfo\` • \`/uptime\` • \`/roles\` • \`/emojis\` • \`/calc\` • \`/poll\` • \`/say\` • \`/ping\`\n\n` +
           `🎮 **ألعاب وترفيه**\n` +
-          `• \`/xo\` • \`/roll\` • \`/coin\` • \`/love\` • \`/rps\` • \`/choose\` • \`/joke\`\n\n` +
-          `🛡️ **الإشراف والإدارة**\n` +
-          `• \`/clear\` • \`/kick\` • \`/ban\` • \`/unban\` • \`/lockchannel\` • \`/unlockchannel\` • \`/slowmode\``
+          `• \`/xo\` • \`/roll\` • \`/coin\` • \`/love\` • \`/rps\` • \`/choose\` • \`/joke\``
         )
-        .setFooter({ text: 'جميع الأوامر تعمل بالـ Slash Commands (/) أو بالبادئة (!)' });
+        .setFooter({ text: 'جميع الأوامر تعمل بالـ Slash Commands (/) أو بالبادئة (!) واختصارات الدارجة' });
       await interaction.reply({ embeds: [embed] });
     },
     executeText: async (message) => {
@@ -1266,22 +1244,28 @@ export const COMMANDS_REGISTRY: CommandDef[] = [
         .setColor(0x00e5ff)
         .setTitle('📜 دليل أوامر البوت الشامل (50+ أمر)')
         .setDescription(
-          `مرحباً بك! البوت مزود بنظام الرومات الصوتية والذكاء الاصطناعي الجزائري وأوامر إسلامية وثقافية:\n\n` +
+          `مرحباً بك! البوت مزود بنظام الرومات الصوتية والذكاء الاصطناعي الجزائري وأدوات السطاف:\n\n` +
           `🧠 **الذكاء الاصطناعي الجزائري**\n` +
           `• \`!ai [سؤالك]\` أو منشن البوت في أي شات وسولف معاه مباشرة!\n` +
+          `• \`!aichannel [all/off/set]\` (أمر تحكم السطاف في قناة الذكاء)\n` +
           `• \`!nasiha\` ، \`!tafsir\`\n\n` +
+          `🛡️ **الإشراف والسطاف (مع الاختصارات الدارجة)**\n` +
+          `• \`!بلع\` أو \`!lockchat\` (قفل الشات)\n` +
+          `• \`!حل\` أو \`!unlockchat\` (فتح الشات)\n` +
+          `• \`!اسكت\` أو \`!mute @user [دقيقة]\` (كتم/تايم أوت)\n` +
+          `• \`!تكلم\` أو \`!unmute @user\` (فك الكتم)\n` +
+          `• \`!طرد\` أو \`!kick @user\`\n` +
+          `• \`!بند\` أو \`!ban @user\`\n` +
+          `• \`!تحذير\` أو \`!warn @user [سبب]\`\n` +
+          `• \`!مسح\` أو \`!clear [عدد]\` • \`!nuke\` • \`!slowmode [ثواني]\`\n\n` +
           `🌿 **الأوامر الإسلامية**\n` +
           `• \`!quran\` • \`!hadith\` • \`!dhikr\` • \`!prayer\` • \`!dua\` • \`!istighfar\` • \`!salat\` • \`!friday\` • \`!kahf\`\n\n` +
           `🇩🇿 **التراث الجزائري**\n` +
           `• \`!amthal\` • \`!dz\` • \`!tahia\` • \`!marhaba\`\n\n` +
-          `🔊 **الرومات الصوتية**\n` +
-          `• \`!setup\` • \`!stay\` • \`!leave\` • \`!lock\` • \`!unlock\` • \`!rename\` • \`!limit\` • \`!vcinfo\` • \`!claim\` • \`!vckick\` • \`!invite\` • \`!bitrate\`\n\n` +
           `🛠️ **الأدوات والمعلومات**\n` +
           `• \`!serverinfo\` • \`!userinfo\` • \`!avatar\` • \`!botinfo\` • \`!uptime\` • \`!calc\` • \`!poll\` • \`!9ol\` • \`!ping\`\n\n` +
           `🎮 **الألعاب**\n` +
-          `• \`!roll\` • \`!coin\` • \`!love\` • \`!rps\` • \`!choose\` • \`!joke\`\n\n` +
-          `🛡️ **الإشراف**\n` +
-          `• \`!clear\` • \`!kick\` • \`!ban\` • \`!unban\` • \`!lockchannel\` • \`!unlockchannel\` • \`!slowmode\``
+          `• \`!roll\` • \`!coin\` • \`!love\` • \`!rps\` • \`!choose\` • \`!joke\``
         )
         .setFooter({ text: 'جميع الأوامر تعمل بالسلاش (/) أو البادئة (!)' });
       await message.reply({ embeds: [embed] });

@@ -17,7 +17,21 @@ app.use(cors());
 app.use(express.json());
 
 // ==================== Configuration ====================
-let config = {
+let config: {
+  name: string;
+  avatar: string;
+  botUserId: string;
+  ownerUserId: string;
+  createVcId: string;
+  highStaffRoleIds: string[];
+  isTokenConfigured: boolean;
+  isLiveBotConnected: boolean;
+  botTag: string;
+  pingMs: number;
+  bannerUrl: string;
+  aiEnabled: boolean;
+  allowedAiChannelId: string | null;
+} = {
   name: 'AlphaGenerator Temp-VC',
   avatar: 'https://i.imgur.com/bvh29zT.png',
   botUserId: '1548852512965140541',
@@ -29,6 +43,8 @@ let config = {
   botTag: 'Tempvoice#0001',
   pingMs: 22,
   bannerUrl: 'https://i.imgur.com/bvh29zT.png',
+  aiEnabled: true,
+  allowedAiChannelId: null,
 };
 
 // ==================== In-Memory State ====================
@@ -674,6 +690,28 @@ app.post('/api/ai/chat', async (req: Request, res: Response) => {
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'حدث خطأ في معالجة الذكاء الاصطناعي' });
   }
+});
+
+// POST /api/ai/control (Staff / Owner control for AI)
+app.post('/api/ai/control', (req: Request, res: Response) => {
+  const { enabled, channelId } = req.body;
+  if (typeof enabled === 'boolean') {
+    config.aiEnabled = enabled;
+  }
+  if (channelId !== undefined) {
+    config.allowedAiChannelId = channelId ? String(channelId) : null;
+  }
+
+  addLog(
+    'info',
+    `تم تعديل إعدادات الذكاء الاصطناعي: ${config.aiEnabled ? 'مفعل' : 'معطل'}${config.allowedAiChannelId ? ` (محصور في القناة: ${config.allowedAiChannelId})` : ' (متاح في كل القنوات)'}`
+  );
+
+  res.json({
+    success: true,
+    aiEnabled: config.aiEnabled,
+    allowedAiChannelId: config.allowedAiChannelId,
+  });
 });
 
 // GET /api/commands (Returns all 50+ registered bot commands)
