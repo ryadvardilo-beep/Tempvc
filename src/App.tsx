@@ -79,7 +79,7 @@ export default function App() {
   const [showConsole, setShowConsole] = useState(true);
 
   const [config, setConfig] = useState<BotConfig>({
-    name: 'AlphaGenerator Temp-VC',
+    name: 'SEK Temp-VC',
     avatar: 'https://i.imgur.com/bvh29zT.png',
     botUserId: '1548852512965140541',
     ownerUserId: '1054739108905361469',
@@ -304,6 +304,21 @@ export default function App() {
       return;
     }
 
+    if (action === 'admin') {
+      const isOwner = currentUser.id === currentChannel.ownerId || currentUser.isAdmin;
+      if (isOwner) {
+        setMemberSelectConfig({
+          isOpen: true,
+          title: '👑 إدارة ملكية الروم (ADMIN - Pass Leader)',
+          description: 'اختر العضو الذي تريد تحويل ملكية الروم الصوتي إليه.',
+          actionType: 'pass_leader',
+        });
+        return;
+      } else {
+        action = 'claim';
+      }
+    }
+
     if (action === 'pass_leader') {
       setMemberSelectConfig({
         isOpen: true,
@@ -522,7 +537,7 @@ export default function App() {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 font-bold text-white">
             <img src={config.avatar} alt="bot" className="w-5 h-5 rounded-full object-cover" />
-            <span className="font-mono text-cyan-400 font-bold">AlphaGenerator</span>
+            <span className="font-mono text-cyan-400 font-bold">SEK</span>
             <span className="hidden sm:inline text-[#949ba4]">• Temp-VC Bot (15 Buttons)</span>
             <span className="bg-[#23a55a] text-white text-[10px] font-semibold px-1.5 py-0.2 rounded-full flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />

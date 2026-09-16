@@ -15,12 +15,12 @@ export const AlphaBanner: React.FC = () => {
       <div className="relative flex items-center justify-between z-10 mb-4 pb-2 border-b border-cyan-500/20">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center font-black text-black shadow-lg shadow-cyan-500/40 text-xs tracking-tighter border border-cyan-300">
-            AG
+            SEK
           </div>
           <div>
             <div className="flex items-center gap-2">
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-200 to-purple-300 font-black text-base sm:text-lg tracking-wider font-mono">
-                ALPHA GENERATOR
+                SEK BOT
               </span>
               <span className="hidden sm:inline-block bg-emerald-950/80 text-emerald-400 border border-emerald-500/50 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-full shadow-xs">
                 ● ACTIVE
@@ -67,7 +67,7 @@ export const AlphaBanner: React.FC = () => {
 
       <div className="relative z-10 flex items-center justify-between text-[11px] text-[#949ba4] font-mono pt-1">
         <span className="text-cyan-400/90 font-semibold">
-          AlphaGenerator Temp-VC System • نظام الرومات الصوتية الذكي المتطور
+          SEK System
         </span>
         <span className="hidden md:inline text-xs text-[#80848e]">Yesterday at 3:51 AM</span>
       </div>

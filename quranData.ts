@@ -217,7 +217,7 @@ export function buildQuranHubEmbed(): EmbedBuilder {
     )
     .setImage('https://images.unsplash.com/photo-1609599006353-e629aaabfeae?auto=format&fit=crop&w=1200&q=80')
     .setFooter({
-      text: 'AlphaGenerator Quran Hub • صدقة جارية وتقبل الله منا ومنكم صالح الأعمال',
+      text: 'SEK Quran Hub • صدقة جارية وتقبل الله منا ومنكم صالح الأعمال',
       iconURL: 'https://cdn-icons-png.flaticon.com/512/3233/3233483.png',
     })
     .setTimestamp();

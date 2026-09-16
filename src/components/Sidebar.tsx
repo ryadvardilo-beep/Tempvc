@@ -35,9 +35,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="h-12 border-b border-[#1f2023] px-4 flex items-center justify-between font-bold text-white shadow-xs">
         <div className="flex items-center gap-2 truncate">
           <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-xs font-black text-black shrink-0">
-            AG
+            SEK
           </div>
-          <span className="truncate text-sm font-semibold">AlphaGenerator Community</span>
+          <span className="truncate text-sm font-semibold">SEK Community</span>
         </div>
         <button
           onClick={onOpenConfig}

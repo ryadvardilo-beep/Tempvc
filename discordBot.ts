@@ -19,7 +19,10 @@ import {
   Message,
   Interaction,
   ComponentType,
+  AttachmentBuilder,
 } from 'discord.js';
+import path from 'path';
+import fs from 'fs';
 import { joinVoiceChannel, getVoiceConnection, VoiceConnection } from '@discordjs/voice';
 import { getAlgerianAiResponse } from './geminiService.js';
 import { COMMANDS_REGISTRY } from './botCommands.js';
@@ -50,76 +53,93 @@ export let discordClient: Client | null = null;
 let activeVoiceConnections: Map<string, VoiceConnection> = new Map();
 
 /**
- * Creates the 3 rows of 5 buttons matching the exact layout and emojis from screenshot IMG_4809
+ * Loads the local cyber banner and avatar assets to upload directly as Discord attachments
  */
-export function build15ButtonRows(prefix = 'vc'): ActionRowBuilder<ButtonBuilder>[] {
-  const row1 = new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder().setCustomId(`${prefix}_lock`).setEmoji('🔒').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId(`${prefix}_unlock`).setEmoji('🔓').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId(`${prefix}_trust`).setEmoji('👥').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId(`${prefix}_untrust`).setEmoji('👤').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId(`${prefix}_invite`).setEmoji('📢').setStyle(ButtonStyle.Secondary)
-  );
+export function getBannerAndAvatarFiles() {
+  const files: AttachmentBuilder[] = [];
+  const bannerPath = path.join(process.cwd(), 'public', 'voice_banner.jpg');
+  const avatarPath = path.join(process.cwd(), 'public', 'avatar.png');
 
-  const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder().setCustomId(`${prefix}_block`).setEmoji('🚫').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId(`${prefix}_unblock`).setEmoji('⭕').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId(`${prefix}_rename`).setEmoji('✏️').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId(`${prefix}_limit`).setEmoji('🔢').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId(`${prefix}_info`).setEmoji('📜').setStyle(ButtonStyle.Secondary)
-  );
+  let bannerUrl = 'attachment://voice_banner.jpg';
+  let hasBanner = false;
+  let hasAvatar = false;
 
-  const row3 = new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder().setCustomId(`${prefix}_kick`).setEmoji('📞').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId(`${prefix}_xo`).setEmoji('🎮').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId(`${prefix}_staff`).setEmoji('🛠️').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId(`${prefix}_pass`).setEmoji('🔄').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId(`${prefix}_claim`).setEmoji('👑').setStyle(ButtonStyle.Secondary)
-  );
+  if (fs.existsSync(bannerPath)) {
+    files.push(new AttachmentBuilder(bannerPath, { name: 'voice_banner.jpg' }));
+    hasBanner = true;
+  }
+  if (fs.existsSync(avatarPath)) {
+    files.push(new AttachmentBuilder(avatarPath, { name: 'avatar.png' }));
+    hasAvatar = true;
+  }
 
-  return [row1, row2, row3];
+  return {
+    files,
+    bannerUrl: hasBanner ? 'attachment://voice_banner.jpg' : 'https://i.imgur.com/bvh29zT.png',
+    hasAvatar,
+  };
 }
 
 /**
- * Creates the interface control embed matching the exact text & styling in the user screenshot
+ * Creates the 8 buttons matching the exact layout and icons from user reference IMG_4851:
+ * Row 1: LOCK, UNLOCK, TRUST, BLOCK
+ * Row 2: RENAME, LIMIT, KICK, ADMIN
+ */
+export function buildVoiceButtonRows(prefix = 'vc'): ActionRowBuilder<ButtonBuilder>[] {
+  const row1 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder().setCustomId(`${prefix}_lock`).setLabel('LOCK').setEmoji('🔒').setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId(`${prefix}_unlock`).setLabel('UNLOCK').setEmoji('🔓').setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId(`${prefix}_trust`).setLabel('TRUST').setEmoji('🤝').setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId(`${prefix}_block`).setLabel('BLOCK').setEmoji('🚫').setStyle(ButtonStyle.Secondary)
+  );
+
+  const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder().setCustomId(`${prefix}_rename`).setLabel('RENAME').setEmoji('✏️').setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId(`${prefix}_limit`).setLabel('LIMIT').setEmoji('🔢').setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId(`${prefix}_kick`).setLabel('KICK').setEmoji('👢').setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId(`${prefix}_admin`).setLabel('ADMIN').setEmoji('👑').setStyle(ButtonStyle.Secondary)
+  );
+
+  return [row1, row2];
+}
+
+// Alias for backwards compatibility
+export const build15ButtonRows = buildVoiceButtonRows;
+
+/**
+ * Creates the interface control embed matching SEK System branding and the 8-button layout
  */
 export function buildControlEmbed(
   channelName: string,
   ownerName: string,
-  bannerUrl = 'https://i.imgur.com/bvh29zT.png'
+  bannerUrl = 'attachment://voice_banner.jpg',
+  hasAvatar = true
 ): EmbedBuilder {
   const embed = new EmbedBuilder()
     .setColor(0x00e5ff)
     .setAuthor({
-      name: 'AlphaGenerator Temp-VC System • نظام الرومات الصوتية الذكي',
-      iconURL: 'https://i.imgur.com/bvh29zT.png',
+      name: 'SEK System • لوحة التحكم بالرومات الصوتية',
+      iconURL: hasAvatar ? 'attachment://avatar.png' : undefined,
     })
     .setTitle(`🔊 لوحة تحكم الروم الصوتي | ${channelName}`)
     .setDescription(
-      `مرحباً بك يا **${ownerName}** في غرفتك الصوتية المؤقتة! يمكنك التحكم بالكامل في إعدادات وخصوصية الروم عبر الأزرار أدناه:\n\n` +
-      `**🔒 التحكم بالخصوصية والأمان (Access & Privacy)**\n` +
-      `• 🔒 **Lock**: قفل الروم ومنع أي شخص من الدخول.\n` +
-      `• 🔓 **Unlock**: فتح الروم للجميع.\n` +
-      `• 👥 **Trust**: منح تصريح دخول لعضو حتى والروم مقفل.\n` +
-      `• 👤 **Untrust**: سحب التصريح من العضو.\n` +
-      `• 📢 **Invite**: إنشاء رابط دعوة مباشر لرومك.\n\n` +
-      `**⚙️ التحكم بالإعدادات والسعة (Settings & Capacity)**\n` +
-      `• 🚫 **Block**: حظر وطرد عضو فورياً ومنعه من الدخول.\n` +
-      `• ⭕ **Unblock**: فك الحظر عن العضو.\n` +
-      `• ✏️ **Rename**: تغيير اسم الروم الصوتي.\n` +
-      `• 🔢 **Limit**: تحديد السعة القصوى لعدد الأشخاص (0-99).\n` +
-      `• 📜 **Info**: عرض إحصائيات ومعلومات الروم.\n\n` +
-      `**👑 التحكم بالملكية والمساعدة والألعاب (Management & Extras)**\n` +
-      `• 📞 **Kick**: طرد عضو متواجد حالياً داخل الروم الصوتي.\n` +
-      `• 🔄 **Pass Leader**: نقل ملكية الروم الصوتي بالكامل لأحد أصدقائك المتواجدين معك.\n` +
-      `• 👑 **Claim**: استلام ملكية الروم تلقائياً إذا خرج المالك الأصلي من الروم.\n` +
-      `• 🎮 **XO Game**: تشغيل لعبة XO وتحدي التفاعلية داخل شات الروم للتسلية.\n` +
-      `• 🛠️ **Staff Help**: طلب مساعدة فورية وإرسال تنبيه لطاقم إدارة السيرفر.`
+      `مرحباً بك يا **${ownerName}** في غرفتك الصوتية!\n` +
+      `يمكنك إدارة وضبط خصوصية وسعة رومك بسهولة عبر الأزرار الـ 8 أدناه:\n\n` +
+      `🛡️ **الأمان والخصوصية (Security & Access)**\n` +
+      `• 🔒 **LOCK** : قفل الروم ومنع دخول الأعضاء\n` +
+      `• 🔓 **UNLOCK** : فتح الروم للجميع\n` +
+      `• 🤝 **TRUST** : منح تصريح دخول لعضو حتى والروم مقفل\n` +
+      `• 🚫 **BLOCK** : حظر عضو وطرده فورياً ومنعه من الدخول\n\n` +
+      `⚙️ **الإعدادات والتحكم (Settings & Management)**\n` +
+      `• ✏️ **RENAME** : تغيير وتعديل اسم الروم الصوتي\n` +
+      `• 🔢 **LIMIT** : تحديد الحد الأقصى لعدد الأشخاص (0-99)\n` +
+      `• 👢 **KICK** : طرد عضو متواجد حالياً داخل الروم الصوتي\n` +
+      `• 👑 **ADMIN** : إدارة ملكية الروم الصوتي (نقل أو استلام الملكية)`
     )
     .setImage(bannerUrl)
     .setFooter({
-      text: 'AlphaGenerator Temp-VC System • نظام الرومات الصوتية الذكي',
-      iconURL: 'https://i.imgur.com/bvh29zT.png',
+      text: 'SEK System',
+      iconURL: hasAvatar ? 'attachment://avatar.png' : undefined,
     })
     .setTimestamp();
 
@@ -365,15 +385,16 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
 
           ctx.addLog('voice_create', `إنشاء روم صوتي تلقائي: ${tempChannelName} للعضو ${member.displayName}`, tempChannel.id, member.id);
 
-          // Send the 15-button Control Panel Embed into the newly created voice channel's text chat!
+          // Send the 8-button Control Panel Embed into the newly created voice channel's text chat!
           try {
-            const bannerUrl = ctx.config.bannerUrl || 'https://i.imgur.com/bvh29zT.png';
-            const embed = buildControlEmbed(tempChannel.name, member.displayName, bannerUrl);
-            const buttonRows = build15ButtonRows('vc');
+            const { files, bannerUrl, hasAvatar } = getBannerAndAvatarFiles();
+            const embed = buildControlEmbed(tempChannel.name, member.displayName, bannerUrl, hasAvatar);
+            const buttonRows = buildVoiceButtonRows('vc');
             await (tempChannel as any).send({
-              content: `👋 مرحباً بك <@${member.id}>! هذا هو بانل التحكم الكامل الخاص برومك الصوتي.`,
+              content: `👋 مرحباً بك <@${member.id}>! هذا هو بانل التحكم الخاص برومك الصوتي.`,
               embeds: [embed],
               components: buttonRows,
+              files,
             });
           } catch (embedErr) {
             console.error('Error sending embed to temp voice channel text chat:', embedErr);
@@ -540,14 +561,15 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
           // Update context
           ctx.config.createVcId = tapChannel.id;
 
-          // 4. Send the 15-button Control Embed directly into ⚫️-interface
-          const bannerUrl = ctx.config.bannerUrl || 'https://i.imgur.com/bvh29zT.png';
-          const controlEmbed = buildControlEmbed('AlphaGenerator Interface', 'جميع الأعضاء', bannerUrl);
-          const buttonRows = build15ButtonRows('vc');
+          // 4. Send the 8-button Control Embed directly into ⚫️-interface
+          const { files, bannerUrl, hasAvatar } = getBannerAndAvatarFiles();
+          const controlEmbed = buildControlEmbed('SEK Interface', 'جميع الأعضاء', bannerUrl, hasAvatar);
+          const buttonRows = buildVoiceButtonRows('vc');
 
           await interfaceChannel.send({
             embeds: [controlEmbed],
             components: buttonRows,
+            files,
           });
 
           await replyMsg.edit(
@@ -562,6 +584,34 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
         } catch (setupErr: any) {
           console.error('Setup error:', setupErr);
           await replyMsg.edit(`❌ حدث خطأ أثناء تنفيذ setup: ${setupErr.message}`);
+        }
+        return;
+      }
+
+      // ---------- 1.5 COMMAND: !panel OR !بانل (Send / Refresh 8-Button Control Panel) ----------
+      if (lower === '!panel' || lower === '?panel' || lower === '!بانل' || lower === 'panel') {
+        const isAdmin = message.member?.permissions.has(PermissionFlagsBits.Administrator) || message.author.id === ctx.config.ownerUserId;
+        if (!isAdmin) {
+          await message.reply('🚫 هذا الأمر مخصص للمسؤولين فقط لإرسال لوحة التحكم!');
+          return;
+        }
+
+        try {
+          const { files, bannerUrl, hasAvatar } = getBannerAndAvatarFiles();
+          const controlEmbed = buildControlEmbed('SEK Interface', 'جميع الأعضاء', bannerUrl, hasAvatar);
+          const buttonRows = buildVoiceButtonRows('vc');
+
+          await (message.channel as any).send({
+            embeds: [controlEmbed],
+            components: buttonRows,
+            files,
+          });
+
+          await message.reply('✅ **تم إرسال لوحة تحكم SEK System المحدثة (8 أزرار) بنجاح!**');
+          ctx.addLog('panel', `تم إرسال لوحة التحكم بواسطة ${message.author.username}`, message.channel.id, message.author.id);
+        } catch (err: any) {
+          console.error('Panel send error:', err);
+          await message.reply(`❌ فشل إرسال لوحة التحكم: ${err.message}`);
         }
         return;
       }
@@ -795,13 +845,14 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
 
             ctx.config.createVcId = tapChannel.id;
 
-            const bannerUrl = ctx.config.bannerUrl || 'https://i.imgur.com/bvh29zT.png';
-            const controlEmbed = buildControlEmbed('AlphaGenerator Interface', 'جميع الأعضاء', bannerUrl);
-            const buttonRows = build15ButtonRows('vc');
+            const { files, bannerUrl, hasAvatar } = getBannerAndAvatarFiles();
+            const controlEmbed = buildControlEmbed('SEK Interface', 'جميع الأعضاء', bannerUrl, hasAvatar);
+            const buttonRows = buildVoiceButtonRows('vc');
 
             await interfaceChannel.send({
               embeds: [controlEmbed],
               components: buttonRows,
+              files,
             });
 
             await interaction.editReply(
@@ -815,6 +866,40 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
           } catch (err: any) {
             console.error('Slash setup error:', err);
             await interaction.editReply(`❌ حدث خطأ أثناء تنفيذ setup: ${err.message}`);
+          }
+          return;
+        }
+
+        // /panel
+        if (commandName === 'panel') {
+          const isAdmin = member.permissions.has(PermissionFlagsBits.Administrator) || member.id === ctx.config.ownerUserId;
+          if (!isAdmin) {
+            await interaction.reply({
+              content: '🚫 هذا الأمر مخصص للمسؤولين فقط لإرسال لوحة التحكم!',
+              ephemeral: true,
+            });
+            return;
+          }
+
+          try {
+            await interaction.deferReply({ ephemeral: true });
+            const { files, bannerUrl, hasAvatar } = getBannerAndAvatarFiles();
+            const controlEmbed = buildControlEmbed('SEK Interface', 'جميع الأعضاء', bannerUrl, hasAvatar);
+            const buttonRows = buildVoiceButtonRows('vc');
+
+            if (interaction.channel && 'send' in interaction.channel) {
+              await (interaction.channel as any).send({
+                embeds: [controlEmbed],
+                components: buttonRows,
+                files,
+              });
+              await interaction.editReply('✅ **تم إرسال لوحة التحكم بنجاح في هذه القناة!**');
+            } else {
+              await interaction.editReply({ embeds: [controlEmbed], components: buttonRows, files });
+            }
+          } catch (panelErr: any) {
+            console.error('Slash panel error:', panelErr);
+            await interaction.editReply(`❌ فشل إرسال لوحة التحكم: ${panelErr.message}`);
           }
           return;
         }
@@ -1105,7 +1190,7 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
               { name: '🔐 حالة القفل', value: isLockedText, inline: true },
               { name: '🆔 معرف الروم', value: `\`${voiceChannel.id}\``, inline: true }
             )
-            .setFooter({ text: 'AlphaGenerator Temp-VC System' });
+            .setFooter({ text: 'SEK System' });
 
           await interaction.reply({ embeds: [infoEmbed], ephemeral: true });
           return;
@@ -1239,6 +1324,71 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
           });
           ctx.addLog('claim', `العضو ${member.displayName} استلم ملكية الروم الصوتي`, voiceChannel.id, member.id);
           return;
+        }
+
+        // 16. ADMIN (Pass Leader for Owner, Claim for non-owner)
+        if (customId === 'vc_admin') {
+          if (isOwner || isAdmin) {
+            const otherMembers = voiceChannel.members.filter((m) => m.id !== member.id && !m.user.bot);
+            if (otherMembers.size === 0) {
+              await interaction.reply({
+                content: `👑 **أنت مالك الروم الحالي!**\nلا يوجد أعضاء آخرين متواجدين معك في الروم لنقل الملكية إليهم حالياً.`,
+                ephemeral: true,
+              });
+              return;
+            }
+
+            const select = new StringSelectMenuBuilder()
+              .setCustomId(`sel_pass_${voiceChannel.id}`)
+              .setPlaceholder('اختر العضو الجديد ليكون مالك الروم')
+              .addOptions(
+                otherMembers.map((m) => ({
+                  label: m.displayName,
+                  value: m.id,
+                  description: `ID: ${m.id}`,
+                  emoji: '👑',
+                }))
+              );
+
+            const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(select);
+            await interaction.reply({
+              content: '👑 **لوحة إدارة الروم الصوتي (ADMIN)**\nاختر العضو الذي ترغب بنقل ملكية الروم إليه:',
+              components: [row],
+              ephemeral: true,
+            });
+            return;
+          } else {
+            // Non-owner clicked ADMIN: attempt to Claim if owner left
+            const originalOwnerStillInside = voiceChannel.members.has(tempVcData?.ownerId);
+            if (originalOwnerStillInside) {
+              await interaction.reply({
+                content: `❌ مالك الروم الأصلي (<@${tempVcData?.ownerId || 'غير معروف'}>) لا يزال متواجداً داخل الروم! لا يمكنك استلام الملكية.`,
+                ephemeral: true,
+              });
+              return;
+            }
+
+            // Transfer ownership to clicker
+            if (tempVcData) {
+              tempVcData.ownerId = member.id;
+              tempVcData.ownerName = member.displayName;
+            }
+
+            await voiceChannel.permissionOverwrites.edit(member.id, {
+              Connect: true,
+              Speak: true,
+              ManageChannels: true,
+              MuteMembers: true,
+              DeafenMembers: true,
+              MoveMembers: true,
+            });
+
+            await interaction.reply({
+              content: `👑 **مبروك! لقد استلمت ملكية الروم الصوتي <#${voiceChannel.id}> بنجاح عبر زر ADMIN.**`,
+            });
+            ctx.addLog('claim', `العضو ${member.displayName} استلم ملكية الروم الصوتي عبر زر ADMIN`, voiceChannel.id, member.id);
+            return;
+          }
         }
       }
 

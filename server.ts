@@ -15,6 +15,7 @@ const PORT = 3000;
 
 app.use(cors());
 app.use(express.json());
+app.use(express.static(path.join(rootDir, 'public')));
 
 // ==================== Configuration ====================
 let config: {
@@ -32,8 +33,8 @@ let config: {
   aiEnabled: boolean;
   allowedAiChannelId: string | null;
 } = {
-  name: 'AlphaGenerator Temp-VC',
-  avatar: 'https://i.imgur.com/bvh29zT.png',
+  name: 'SEK Temp-VC',
+  avatar: '/avatar.png',
   botUserId: '1548852512965140541',
   ownerUserId: '1054739108905361469',
   createVcId: process.env.CREATE_VC_ID || '1054739108905361469',
@@ -42,7 +43,7 @@ let config: {
   isLiveBotConnected: false,
   botTag: 'Tempvoice#0001',
   pingMs: 22,
-  bannerUrl: 'https://i.imgur.com/bvh29zT.png',
+  bannerUrl: '/voice_banner.jpg',
   aiEnabled: true,
   allowedAiChannelId: null,
 };
@@ -121,7 +122,7 @@ function addLog(type: string, message: string, channelId?: string, userId?: stri
 }
 
 // Initial seed log
-addLog('info', '✅ AlphaGenerator Temp-VC System • نظام الرومات الصوتية الذكي المتطور (15 زراً)');
+addLog('info', '✅ SEK Temp-VC System • نظام الرومات الصوتية الذكي المتطور (15 زراً)');
 
 // Initial active room
 const seedOwnerId = '1054739108905361469';
@@ -669,11 +670,28 @@ app.post('/api/config', (req: Request, res: Response) => {
 
 // GET /api/banner
 app.get('/api/banner', (req: Request, res: Response) => {
-  const bannerPath = path.join(process.cwd(), 'src', 'assets', 'images', 'alpha_bot_banner_1789500611950.jpg');
+  const bannerPath = path.join(process.cwd(), 'public', 'voice_banner.jpg');
   if (fs.existsSync(bannerPath)) {
     return res.sendFile(bannerPath);
   }
-  res.redirect('https://i.imgur.com/bvh29zT.png');
+  const altPath = path.join(process.cwd(), 'src', 'assets', 'images', 'sek_voice_banner_1789562273846.jpg');
+  if (fs.existsSync(altPath)) {
+    return res.sendFile(altPath);
+  }
+  res.status(404).json({ error: 'Banner image not found' });
+});
+
+// GET /api/avatar
+app.get('/api/avatar', (req: Request, res: Response) => {
+  const avatarPath = path.join(process.cwd(), 'public', 'avatar.png');
+  if (fs.existsSync(avatarPath)) {
+    return res.sendFile(avatarPath);
+  }
+  const altAvatar = path.join(process.cwd(), 'src', 'assets', 'images', 'sek_bot_avatar_1789562321776.jpg');
+  if (fs.existsSync(altAvatar)) {
+    return res.sendFile(altAvatar);
+  }
+  res.status(404).json({ error: 'Avatar image not found' });
 });
 
 // POST /api/ai/chat (Gemini AI Algerian Darja API)

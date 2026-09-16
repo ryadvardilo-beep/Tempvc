@@ -1,4 +1,4 @@
-# AlphaGenerator - TempVC Bot
+# SEK - TempVC Bot
 
 Discord Temporary Voice Channel bot and interactive management dashboard for automatic voice room generation, channel locking, renaming, and urgent staff alerts.
 

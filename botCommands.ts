@@ -132,7 +132,7 @@ export const COMMANDS_REGISTRY: CommandDef[] = [
         .setColor(0x059669)
         .setTitle('📖 تذكرة من كتاب الله وسنة رسوله ﷺ')
         .setDescription(`> 💫 **${ayah}**\n\n*«أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ»*`)
-        .setFooter({ text: 'AlphaGenerator Quran Hub • ذكر فإن الذكرى تنفع المؤمنين' })
+        .setFooter({ text: 'SEK Quran Hub • ذكر فإن الذكرى تنفع المؤمنين' })
         .setTimestamp();
       await interaction.reply({ embeds: [embed] });
     },
@@ -142,7 +142,7 @@ export const COMMANDS_REGISTRY: CommandDef[] = [
         .setColor(0x059669)
         .setTitle('📖 تذكرة من كتاب الله وسنة رسوله ﷺ')
         .setDescription(`> 💫 **${ayah}**\n\n*«أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ»*`)
-        .setFooter({ text: 'AlphaGenerator Quran Hub • ذكر فإن الذكرى تنفع المؤمنين' })
+        .setFooter({ text: 'SEK Quran Hub • ذكر فإن الذكرى تنفع المؤمنين' })
         .setTimestamp();
       await message.reply({ embeds: [embed] });
     },
@@ -157,7 +157,7 @@ export const COMMANDS_REGISTRY: CommandDef[] = [
         .setColor(0x10b981)
         .setTitle('🌿 حديث نبوي شريف')
         .setDescription(`> ✨ **${hadith}**\n\n*صلّوا على الحبيب المصطفى ﷺ*`)
-        .setFooter({ text: 'AlphaGenerator • اللهم صل وسلم على نبينا محمد' })
+        .setFooter({ text: 'SEK • اللهم صل وسلم على نبينا محمد' })
         .setTimestamp();
       await interaction.reply({ embeds: [embed] });
     },
@@ -167,7 +167,7 @@ export const COMMANDS_REGISTRY: CommandDef[] = [
         .setColor(0x10b981)
         .setTitle('🌿 حديث نبوي شريف')
         .setDescription(`> ✨ **${hadith}**\n\n*صلّوا على الحبيب المصطفى ﷺ*`)
-        .setFooter({ text: 'AlphaGenerator • اللهم صل وسلم على نبينا محمد' })
+        .setFooter({ text: 'SEK • اللهم صل وسلم على نبينا محمد' })
         .setTimestamp();
       await message.reply({ embeds: [embed] });
     },
@@ -182,7 +182,7 @@ export const COMMANDS_REGISTRY: CommandDef[] = [
         .setColor(0x0ea5e9)
         .setTitle('📿 رطّب لسانك بذكر الله تعالى')
         .setDescription(`> 💫 **« ${d} »**\n\n*تقبل الله منا ومنكم صالح الأعمال والطاعات.*`)
-        .setFooter({ text: 'AlphaGenerator • سبحان الله وبحمده عدد خلقه ورضا نفسه' })
+        .setFooter({ text: 'SEK • سبحان الله وبحمده عدد خلقه ورضا نفسه' })
         .setTimestamp();
       await interaction.reply({ embeds: [embed] });
     },
@@ -192,7 +192,7 @@ export const COMMANDS_REGISTRY: CommandDef[] = [
         .setColor(0x0ea5e9)
         .setTitle('📿 رطّب لسانك بذكر الله تعالى')
         .setDescription(`> 💫 **« ${d} »**\n\n*تقبل الله منا ومنكم صالح الأعمال والطاعات.*`)
-        .setFooter({ text: 'AlphaGenerator • سبحان الله وبحمده عدد خلقه ورضا نفسه' })
+        .setFooter({ text: 'SEK • سبحان الله وبحمده عدد خلقه ورضا نفسه' })
         .setTimestamp();
       await message.reply({ embeds: [embed] });
     },
@@ -247,7 +247,7 @@ export const COMMANDS_REGISTRY: CommandDef[] = [
         .setColor(0x8b5cf6)
         .setTitle('🤲 دعاء مبارك ومأثور')
         .setDescription(`> 💫 **${selected}**\n\n*اللهم استجب وتقبل منا يا رب العالمين.*`)
-        .setFooter({ text: 'AlphaGenerator • وإذا سألك عبادي عني فإني قريب' })
+        .setFooter({ text: 'SEK • وإذا سألك عبادي عني فإني قريب' })
         .setTimestamp();
       await interaction.reply({ embeds: [embed] });
     },
@@ -264,7 +264,7 @@ export const COMMANDS_REGISTRY: CommandDef[] = [
         .setColor(0x8b5cf6)
         .setTitle('🤲 دعاء مبارك ومأثور')
         .setDescription(`> 💫 **${selected}**\n\n*اللهم استجب وتقبل منا يا رب العالمين.*`)
-        .setFooter({ text: 'AlphaGenerator • وإذا سألك عبادي عني فإني قريب' })
+        .setFooter({ text: 'SEK • وإذا سألك عبادي عني فإني قريب' })
         .setTimestamp();
       await message.reply({ embeds: [embed] });
     },
@@ -281,7 +281,7 @@ export const COMMANDS_REGISTRY: CommandDef[] = [
           `> «**اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلَّا أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ، وَأَنَا عَلَى عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ، أَعُوذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ، أَبُوءُ لَكَ بِنِعْمَتِكَ عَلَيَّ، وَأَبُوءُ لَكَ بِذَنْبِي فَاغْفِرْ لِي فَإِنَّهُ لَا يَغْفِرُ الذُّنُوبَ إِلَّا أَنْتَ**»\n\n` +
           `*قال النبي ﷺ: «من قالها موقناً بها حين يمسي فمات من ليلته دخل الجنة، وكذلك حين يصبح».*`
         )
-        .setFooter({ text: 'AlphaGenerator • أستغفر الله العظيم وأتوب إليه' })
+        .setFooter({ text: 'SEK • أستغفر الله العظيم وأتوب إليه' })
         .setTimestamp();
       await interaction.reply({ embeds: [embed] });
     },
@@ -293,7 +293,7 @@ export const COMMANDS_REGISTRY: CommandDef[] = [
           `> «**اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلَّا أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ، وَأَنَا عَلَى عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ، أَعُوذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ، أَبُوءُ لَكَ بِنِعْمَتِكَ عَلَيَّ، وَأَبُوءُ لَكَ بِذَنْبِي فَاغْفِرْ لِي فَإِنَّهُ لَا يَغْفِرُ الذُّنُوبَ إِلَّا أَنْتَ**»\n\n` +
           `*قال النبي ﷺ: «من قالها موقناً بها حين يمسي فمات من ليلته دخل الجنة، وكذلك حين يصبح».*`
         )
-        .setFooter({ text: 'AlphaGenerator • أستغفر الله العظيم وأتوب إليه' })
+        .setFooter({ text: 'SEK • أستغفر الله العظيم وأتوب إليه' })
         .setTimestamp();
       await message.reply({ embeds: [embed] });
     },
@@ -310,7 +310,7 @@ export const COMMANDS_REGISTRY: CommandDef[] = [
           `قال رسول الله ﷺ: «**مَنْ صَلَّى عَلَيَّ صَلَاةً صَلَّى اللَّهُ عَلَيْهِ بِهَا عَشْرًا**»\n\n` +
           `> 💫 **اللَّهُمَّ صَلِّ وَسَلِّمْ وَبَارِكْ عَلَى نَبِيِّنَا مُحَمَّدٍ وَعَلَى آلِهِ وَصَحْبِهِ أَجْمَعِينَ**`
         )
-        .setFooter({ text: 'AlphaGenerator • اللهم صل وسلم وبارك على سيدنا محمد' })
+        .setFooter({ text: 'SEK • اللهم صل وسلم وبارك على سيدنا محمد' })
         .setTimestamp();
       await interaction.reply({ embeds: [embed] });
     },
@@ -322,7 +322,7 @@ export const COMMANDS_REGISTRY: CommandDef[] = [
           `قال رسول الله ﷺ: «**مَنْ صَلَّى عَلَيَّ صَلَاةً صَلَّى اللَّهُ عَلَيْهِ بِهَا عَشْرًا**»\n\n` +
           `> 💫 **اللَّهُمَّ صَلِّ وَسَلِّمْ وَبَارِكْ عَلَى نَبِيِّنَا مُحَمَّدٍ وَعَلَى آلِهِ وَصَحْبِهِ أَجْمَعِينَ**`
         )
-        .setFooter({ text: 'AlphaGenerator • اللهم صل وسلم وبارك على سيدنا محمد' })
+        .setFooter({ text: 'SEK • اللهم صل وسلم وبارك على سيدنا محمد' })
         .setTimestamp();
       await message.reply({ embeds: [embed] });
     },
@@ -342,7 +342,7 @@ export const COMMANDS_REGISTRY: CommandDef[] = [
           `4️⃣ **الإكثار من الصلاة على النبي ﷺ**\n` +
           `5️⃣ **تحري ساعة الإجابة** في آخر نهار الجمعة قبل الغروب.`
         )
-        .setFooter({ text: 'AlphaGenerator • جمعة مباركة وطيبة عليكم جميعاً' })
+        .setFooter({ text: 'SEK • جمعة مباركة وطيبة عليكم جميعاً' })
         .setTimestamp();
       await interaction.reply({ embeds: [embed] });
     },
@@ -357,7 +357,7 @@ export const COMMANDS_REGISTRY: CommandDef[] = [
           `4️⃣ **الإكثار من الصلاة على النبي ﷺ**\n` +
           `5️⃣ **تحري ساعة الإجابة** في آخر نهار الجمعة قبل الغروب.`
         )
-        .setFooter({ text: 'AlphaGenerator • جمعة مباركة وطيبة عليكم جميعاً' })
+        .setFooter({ text: 'SEK • جمعة مباركة وطيبة عليكم جميعاً' })
         .setTimestamp();
       await message.reply({ embeds: [embed] });
     },
@@ -375,7 +375,7 @@ export const COMMANDS_REGISTRY: CommandDef[] = [
           `«**مَنْ قَرَأَ سُورَةَ الْكَهْفِ فِي يَوْمِ الْجُمُعَةِ أَضَاءَ لَهُ مِنَ النُّورِ مَا بَيْنَ الْجُمُعَتَيْنِ**»\n\n` +
           `🔗 **[اضغط هنا لقراءة سورة الكهف كاملةً إلكترونياً](https://quran.com/18)**`
         )
-        .setFooter({ text: 'AlphaGenerator Quran Hub' })
+        .setFooter({ text: 'SEK Quran Hub' })
         .setTimestamp();
       await interaction.reply({ embeds: [embed] });
     },
@@ -388,7 +388,7 @@ export const COMMANDS_REGISTRY: CommandDef[] = [
           `«**مَنْ قَرَأَ سُورَةَ الْكَهْفِ فِي يَوْمِ الْجُمُعَةِ أَضَاءَ لَهُ مِنَ النُّورِ مَا بَيْنَ الْجُمُعَتَيْنِ**»\n\n` +
           `🔗 **[اضغط هنا لقراءة سورة الكهف كاملةً إلكترونياً](https://quran.com/18)**`
         )
-        .setFooter({ text: 'AlphaGenerator Quran Hub' })
+        .setFooter({ text: 'SEK Quran Hub' })
         .setTimestamp();
       await message.reply({ embeds: [embed] });
     },
@@ -1097,7 +1097,7 @@ export const COMMANDS_REGISTRY: CommandDef[] = [
           { name: '🔊 الرومات النشطة', value: `${Object.keys(ctx.activeTempVCs).length}`, inline: true },
           { name: '👑 مالك البوت', value: `<@${ctx.config.ownerUserId}>`, inline: true }
         )
-        .setFooter({ text: 'AlphaGenerator Bot System' });
+        .setFooter({ text: 'SEK System' });
       await interaction.reply({ embeds: [embed] });
     },
     executeText: async (message, _, ctx) => {
@@ -1110,7 +1110,8 @@ export const COMMANDS_REGISTRY: CommandDef[] = [
           { name: '🏓 الاستجابة (Ping)', value: `${message.client.ws.ping}ms`, inline: true },
           { name: '🧠 الذكاء الاصطناعي', value: 'Google Gemini 3.8 Flash (دارجة جزائرية)', inline: true },
           { name: '🔊 الرومات النشطة', value: `${Object.keys(ctx.activeTempVCs).length}`, inline: true }
-        );
+        )
+        .setFooter({ text: 'SEK System' });
       await message.reply({ embeds: [embed] });
     },
   },
