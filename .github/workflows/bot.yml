@@ -21,17 +21,31 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Setup Bun Environment
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: 'npm'
+          node-version: 22
 
       - name: Install Dependencies
-        run: npm ci || npm install
+        run: |
+          if [ -f bun.lock ] || [ -f bun.lockb ]; then
+            bun install
+          else
+            npm install
+          fi
 
-      - name: Build Bot Project
-        run: npm run build
+      - name: Build Project
+        run: |
+          if command -v bun &> /dev/null; then
+            bun run build || npm run build || true
+          else
+            npm run build || true
+          fi
 
       - name: Run Discord Bot with Self-Restart Loop
         env:
@@ -39,7 +53,6 @@ jobs:
           PORT: 3000
         run: |
           echo "🚀 Starting Discord Bot 24/7 on GitHub Actions..."
-          # Run node server.ts with tsx or built server directly
-          # timeout command runs for 5 hours (18000 seconds) then terminates cleanly to trigger the next scheduled workflow run
-          timeout 18000s npm run start || timeout 18000s npx tsx server.ts || true
+          # Run bot using bun or tsx with timeout
+          timeout 18000s bun run start || timeout 18000s npm run start || timeout 18000s npx tsx server.ts || true
           echo "🔄 Cycle completed cleanly, restarting in next schedule..."
