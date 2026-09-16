@@ -1,0 +1,45 @@
+name: Discord Bot 24/7 Runner
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+  schedule:
+    # Trigger automatically every 5 hours (before GitHub's 6h job limit)
+    - cron: '0 */5 * * *'
+
+concurrency:
+  group: discord-bot-runner
+  cancel-in-progress: true
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci || npm install
+
+      - name: Build Bot Project
+        run: npm run build
+
+      - name: Run Discord Bot with Self-Restart Loop
+        env:
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          PORT: 3000
+        run: |
+          echo "🚀 Starting Discord Bot 24/7 on GitHub Actions..."
+          # Run node server.ts with tsx or built server directly
+          # timeout command runs for 5 hours (18000 seconds) then terminates cleanly to trigger the next scheduled workflow run
+          timeout 18000s npm run start || timeout 18000s npx tsx server.ts || true
+          echo "🔄 Cycle completed cleanly, restarting in next schedule..."

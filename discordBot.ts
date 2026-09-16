@@ -152,13 +152,53 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
 
   const client = discordClient;
 
-  client.on('ready', () => {
+  client.on('ready', async () => {
     console.log(`[Discord Bot] Ready and logged in as ${client.user?.tag}!`);
     ctx.config.isLiveBotConnected = true;
     ctx.config.isTokenConfigured = true;
     ctx.config.botTag = client.user?.tag || 'Tempvoice#0001';
     ctx.config.botUserId = client.user?.id || ctx.config.botUserId;
     ctx.addLog('info', `✅ تم تسجيل الدخول بنجاح بحساب البوت: ${client.user?.tag}`);
+
+    // Register Slash Commands globally so commands work even without MessageContent intent
+    try {
+      const slashCommands = [
+        {
+          name: 'setup',
+          description: 'تجهيز وإعداد نظام الرومات الصوتية والكاتيجوري وقناة التحكم بالأزرار',
+        },
+        {
+          name: 'stay',
+          description: 'تثبيت البوت في الروم الصوتي الحالي 24/7 دون خروج',
+        },
+        {
+          name: 'leave',
+          description: 'إخراج البوت وفصله من الروم الصوتي',
+        },
+        {
+          name: 'say',
+          description: 'إرسال رسالة باسم البوت في القناة',
+          options: [
+            {
+              name: 'message',
+              description: 'الرسالة التي تريد أن يرسلها البوت',
+              type: 3, // STRING
+              required: true,
+            },
+          ],
+        },
+        {
+          name: 'ping',
+          description: 'فحص سرعة استجابة البوت (Ping)',
+        },
+      ];
+
+      await client.application?.commands.set(slashCommands);
+      console.log('[Discord Bot] Slash Commands successfully registered!');
+      ctx.addLog('info', 'تم تسجيل الأوامر التفاعلية (Slash Commands) بنجاح');
+    } catch (cmdRegErr: any) {
+      console.error('[Discord Bot] Failed to register slash commands:', cmdRegErr.message);
+    }
   });
 
   client.on('error', (err) => {
@@ -178,12 +218,18 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
         const joinedChannel = newState.channel;
         const channelName = joinedChannel?.name?.toLowerCase() || '';
 
-        // Check if user joined "⚫️ tap to create" or the configured createVcId
+        // Check if user joined "⚫️ tap to create" or any creator/generator channel
         const isCreateTrigger =
           newState.channelId === ctx.config.createVcId ||
           channelName.includes('tap to create') ||
-          channelName.includes('اضغط لإنشاء') ||
-          channelName.includes('click to create');
+          channelName.includes('create') ||
+          channelName.includes('reacte') ||
+          channelName.includes('انشاء') ||
+          channelName.includes('إنشاء') ||
+          channelName.includes('اضغط') ||
+          channelName.includes('join to') ||
+          channelName.includes('generator') ||
+          channelName.includes('صنع');
 
         if (isCreateTrigger) {
           // Find or fallback category
@@ -202,15 +248,41 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
             permissionOverwrites: [
               {
                 id: guild.id, // @everyone
-                allow: [PermissionFlagsBits.Connect, PermissionFlagsBits.Speak, PermissionFlagsBits.ViewChannel],
-              },
-              {
-                id: member.id, // Room Owner
                 allow: [
+                  PermissionFlagsBits.ViewChannel,
                   PermissionFlagsBits.Connect,
                   PermissionFlagsBits.Speak,
+                  PermissionFlagsBits.Stream,
+                  PermissionFlagsBits.UseVAD,
+                  PermissionFlagsBits.SendMessages,
+                  PermissionFlagsBits.ReadMessageHistory,
+                ],
+              },
+              {
+                id: client.user?.id || '', // The Bot itself
+                allow: [
                   PermissionFlagsBits.ViewChannel,
+                  PermissionFlagsBits.Connect,
+                  PermissionFlagsBits.Speak,
                   PermissionFlagsBits.ManageChannels,
+                  PermissionFlagsBits.MoveMembers,
+                  PermissionFlagsBits.MuteMembers,
+                  PermissionFlagsBits.DeafenMembers,
+                  PermissionFlagsBits.SendMessages,
+                  PermissionFlagsBits.EmbedLinks,
+                  PermissionFlagsBits.AttachFiles,
+                ],
+              },
+              {
+                id: member.id, // Room Owner (Do NOT give raw ManageChannels as it breaks mobile tap to join)
+                allow: [
+                  PermissionFlagsBits.ViewChannel,
+                  PermissionFlagsBits.Connect,
+                  PermissionFlagsBits.Speak,
+                  PermissionFlagsBits.Stream,
+                  PermissionFlagsBits.UseVAD,
+                  PermissionFlagsBits.SendMessages,
+                  PermissionFlagsBits.ReadMessageHistory,
                   PermissionFlagsBits.MuteMembers,
                   PermissionFlagsBits.DeafenMembers,
                   PermissionFlagsBits.MoveMembers,
@@ -220,9 +292,17 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
           });
 
           // Move the user to the newly created room
-          await newState.setChannel(tempChannel).catch((err) => {
-            console.error('Failed to move user to new voice channel:', err);
-          });
+          try {
+            await newState.setChannel(tempChannel);
+          } catch (moveErr: any) {
+            console.error('[Discord Bot] Failed to move user to new voice channel:', moveErr.message);
+            // If move fails (e.g. missing Move Members permission in server roles)
+            try {
+              await (tempChannel as any).send({
+                content: `⚠️ <@${member.id}> تم إنشاء رومك الصوتي ولكن تعذر نقلك إليه تلقائياً! يرجى التأكد من رفع رتبة البوت أو منحه صلاحية **Move Members / Administrator**. يمكنك الضغط على الروم والدخول مباشرة: <#${tempChannel.id}>`,
+              });
+            } catch {}
+          }
 
           // Store in activeTempVCs
           ctx.activeTempVCs[tempChannel.id] = {
@@ -320,16 +400,20 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
     }
   });
 
-  // ==================== TEXT COMMANDS (!setup, ?stay, !9ol, etc.) ====================
+  // ==================== TEXT COMMANDS (!setup, ?stay, !9ol, @bot setup, etc.) ====================
   client.on('messageCreate', async (message: Message) => {
     try {
       if (message.author.bot || !message.guild) return;
 
-      const content = message.content.trim();
+      // Extract content and handle bot mention prefix
+      let content = message.content.trim();
+      if (client.user && message.mentions.has(client.user.id)) {
+        content = content.replace(new RegExp(`^<@!?${client.user.id}>\\s*`, 'i'), '').trim();
+      }
       const lower = content.toLowerCase();
 
-      // ---------- 1. COMMAND: setup OR !setup ----------
-      if (lower === 'setup' || lower === '!setup' || lower === '?setup') {
+      // ---------- 1. COMMAND: setup OR !setup OR ?setup ----------
+      if (lower === 'setup' || lower === '!setup' || lower === '?setup' || lower.startsWith('!setup') || lower.startsWith('?setup')) {
         const hasAdmin =
           message.member?.permissions.has(PermissionFlagsBits.Administrator) ||
           message.member?.permissions.has(PermissionFlagsBits.ManageChannels) ||
@@ -377,6 +461,28 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
             name: '⚫️ tap to create',
             type: ChannelType.GuildVoice,
             parent: category.id,
+            permissionOverwrites: [
+              {
+                id: message.guild.id, // @everyone
+                allow: [
+                  PermissionFlagsBits.ViewChannel,
+                  PermissionFlagsBits.Connect,
+                  PermissionFlagsBits.Speak,
+                  PermissionFlagsBits.Stream,
+                  PermissionFlagsBits.UseVAD,
+                ],
+              },
+              {
+                id: client.user?.id || '',
+                allow: [
+                  PermissionFlagsBits.ViewChannel,
+                  PermissionFlagsBits.Connect,
+                  PermissionFlagsBits.MoveMembers,
+                  PermissionFlagsBits.ManageChannels,
+                  PermissionFlagsBits.Speak,
+                ],
+              },
+            ],
           });
 
           // Update context
@@ -408,8 +514,8 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
         return;
       }
 
-      // ---------- 2. COMMAND: ?stay OR !stay (Stay in VC 24/7) ----------
-      if (lower === '?stay' || lower === '!stay' || lower.startsWith('?stay') || lower.startsWith('!stay')) {
+      // ---------- 2. COMMAND: ?stay OR !stay OR stay (Stay in VC 24/7) ----------
+      if (lower === '?stay' || lower === '!stay' || lower === 'stay' || lower.startsWith('?stay') || lower.startsWith('!stay')) {
         const userVoiceChannel = message.member?.voice?.channel;
         if (!userVoiceChannel) {
           await message.reply('❌ يجب أن تكون متواجداً داخل روم صوتي لتنفيذ أمر `?stay`!');
@@ -430,7 +536,7 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
           await message.reply(
             `🟢 **تم تثبيت البوت في الروم الصوتي <#${userVoiceChannel.id}> بنجاح!**\n` +
             `سيبقى البوت متواجداً داخل الروم **24/7** ولن يخرج أبداً.\n` +
-            `*(إذا أردت خروجه لاحقاً يمكنك كتابة \\?leave)*`
+            `*(إذا أردت خروجه لاحقاً يمكنك كتابة \\?leave أو /leave)*`
           );
 
           ctx.addLog('stay', `تم تثبيت البوت في الروم الصوتي: ${userVoiceChannel.name}`, userVoiceChannel.id, message.author.id);
@@ -441,8 +547,8 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
         return;
       }
 
-      // ---------- 2.1 COMMAND: ?leave OR !leave ----------
-      if (lower === '?leave' || lower === '!leave') {
+      // ---------- 2.1 COMMAND: ?leave OR !leave OR leave ----------
+      if (lower === '?leave' || lower === '!leave' || lower === 'leave') {
         const existingConnection = activeVoiceConnections.get(message.guild.id) || getVoiceConnection(message.guild.id);
         if (existingConnection) {
           existingConnection.destroy();
@@ -455,9 +561,16 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
       }
 
       // ---------- 3. COMMAND: !9ol / 9ol / !قول (Say / Echo Command) ----------
-      if (lower.startsWith('!9ol') || lower.startsWith('9ol') || lower.startsWith('!قول')) {
+      if (lower.startsWith('!9ol') || lower.startsWith('9ol') || lower.startsWith('!قول') || lower.startsWith('قول') || lower.startsWith('!say') || lower.startsWith('say')) {
         // Strip the command trigger
-        let rest = content.replace(/^!9ol\s*/i, '').replace(/^9ol\s*/i, '').replace(/^!قول\s*/i, '').trim();
+        let rest = content
+          .replace(/^!9ol\s*/i, '')
+          .replace(/^9ol\s*/i, '')
+          .replace(/^!قول\s*/i, '')
+          .replace(/^قول\s*/i, '')
+          .replace(/^!say\s*/i, '')
+          .replace(/^say\s*/i, '')
+          .trim();
 
         // Delete the original message to keep it clean
         await message.delete().catch(() => {});
@@ -468,7 +581,6 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
 
         if (mentionedChannel && (mentionedChannel.type === ChannelType.GuildText || mentionedChannel.type === ChannelType.GuildAnnouncement)) {
           targetChannel = mentionedChannel;
-          // remove channel tag e.g. <#123456789>
           rest = rest.replace(/<#\d+>\s*/, '').trim();
         }
 
@@ -484,7 +596,7 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
       }
 
       // ---------- 4. COMMAND: !ping ----------
-      if (lower === '!ping' || lower === '?ping') {
+      if (lower === '!ping' || lower === '?ping' || lower === 'ping') {
         const ping = client.ws.ping;
         await message.reply(`🏓 Pong! سرعة استجابة البوت الحالية: **${ping}ms**`);
         return;
@@ -494,10 +606,179 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
     }
   });
 
-  // ==================== INTERACTION HANDLER (Buttons, Modals, Menus) ====================
+  // ==================== INTERACTION HANDLER (Slash Commands, Buttons, Modals, Menus) ====================
   client.on('interactionCreate', async (interaction: Interaction) => {
     try {
       if (!interaction.guild) return;
+
+      // Handle Slash Commands (/setup, /stay, /leave, /say, /ping)
+      if (interaction.isChatInputCommand()) {
+        const { commandName } = interaction;
+        const member = interaction.member as GuildMember;
+
+        // /setup
+        if (commandName === 'setup') {
+          const hasAdmin =
+            member?.permissions.has(PermissionFlagsBits.Administrator) ||
+            member?.permissions.has(PermissionFlagsBits.ManageChannels) ||
+            member?.id === ctx.config.ownerUserId;
+
+          if (!hasAdmin) {
+            await interaction.reply({
+              content: '❌ يجب أن تملك صلاحية `Administrator` أو `Manage Channels` لتشغيل أمر setup!',
+              ephemeral: true,
+            });
+            return;
+          }
+
+          await interaction.deferReply();
+
+          try {
+            const category = await interaction.guild.channels.create({
+              name: 'tempvoice category',
+              type: ChannelType.GuildCategory,
+            });
+
+            const interfaceChannel = await interaction.guild.channels.create({
+              name: '⚫️-interface',
+              type: ChannelType.GuildText,
+              parent: category.id,
+              permissionOverwrites: [
+                {
+                  id: interaction.guild.id,
+                  allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory],
+                  deny: [PermissionFlagsBits.SendMessages],
+                },
+                {
+                  id: client.user?.id || '',
+                  allow: [
+                    PermissionFlagsBits.ViewChannel,
+                    PermissionFlagsBits.SendMessages,
+                    PermissionFlagsBits.EmbedLinks,
+                    PermissionFlagsBits.AttachFiles,
+                  ],
+                },
+              ],
+            });
+
+            const tapChannel = await interaction.guild.channels.create({
+              name: '⚫️ tap to create',
+              type: ChannelType.GuildVoice,
+              parent: category.id,
+              permissionOverwrites: [
+                {
+                  id: interaction.guild.id,
+                  allow: [
+                    PermissionFlagsBits.ViewChannel,
+                    PermissionFlagsBits.Connect,
+                    PermissionFlagsBits.Speak,
+                    PermissionFlagsBits.Stream,
+                    PermissionFlagsBits.UseVAD,
+                  ],
+                },
+                {
+                  id: client.user?.id || '',
+                  allow: [
+                    PermissionFlagsBits.ViewChannel,
+                    PermissionFlagsBits.Connect,
+                    PermissionFlagsBits.MoveMembers,
+                    PermissionFlagsBits.ManageChannels,
+                    PermissionFlagsBits.Speak,
+                  ],
+                },
+              ],
+            });
+
+            ctx.config.createVcId = tapChannel.id;
+
+            const bannerUrl = ctx.config.bannerUrl || 'https://i.imgur.com/bvh29zT.png';
+            const controlEmbed = buildControlEmbed('AlphaGenerator Interface', 'جميع الأعضاء', bannerUrl);
+            const buttonRows = build15ButtonRows('vc');
+
+            await interfaceChannel.send({
+              embeds: [controlEmbed],
+              components: buttonRows,
+            });
+
+            await interaction.editReply(
+              `✅ **تم إعداد وتجهيز نظام الرومات الصوتية بنجاح!**\n` +
+              `• 📁 الكاتيجوري: **${category.name}**\n` +
+              `• 💬 قناة التحكم: <#${interfaceChannel.id}>\n` +
+              `• 🔊 روم الدخول: <#${tapChannel.id}>\n\n` +
+              `📌 الآن بمجرد دخول أي عضو إلى <#${tapChannel.id}>، سيقوم البوت بإنشاء روم صوتي خاص به ونقله إليه فورياً!`
+            );
+            ctx.addLog('setup', 'تم تنفيذ /setup بنجاح', interfaceChannel.id, member.id);
+          } catch (err: any) {
+            console.error('Slash setup error:', err);
+            await interaction.editReply(`❌ حدث خطأ أثناء تنفيذ setup: ${err.message}`);
+          }
+          return;
+        }
+
+        // /stay
+        if (commandName === 'stay') {
+          const userVoiceChannel = member?.voice?.channel;
+          if (!userVoiceChannel) {
+            await interaction.reply({
+              content: '❌ يجب أن تكون متواجداً داخل روم صوتي لتنفيذ أمر `/stay`!',
+              ephemeral: true,
+            });
+            return;
+          }
+
+          try {
+            const connection = joinVoiceChannel({
+              channelId: userVoiceChannel.id,
+              guildId: interaction.guild.id,
+              adapterCreator: interaction.guild.voiceAdapterCreator as any,
+              selfDeaf: false,
+              selfMute: true,
+            });
+
+            activeVoiceConnections.set(interaction.guild.id, connection);
+
+            await interaction.reply({
+              content: `🟢 **تم تثبيت البوت في الروم الصوتي <#${userVoiceChannel.id}> بنجاح!** سيبقى متواجداً 24/7.`,
+            });
+            ctx.addLog('stay', `تثبيت البوت في الروم الصوتي عبر /stay: ${userVoiceChannel.name}`, userVoiceChannel.id, member.id);
+          } catch (err: any) {
+            await interaction.reply({
+              content: `❌ تعذر تثبيت البوت: ${err.message}`,
+              ephemeral: true,
+            });
+          }
+          return;
+        }
+
+        // /leave
+        if (commandName === 'leave') {
+          const existingConnection = activeVoiceConnections.get(interaction.guild.id) || getVoiceConnection(interaction.guild.id);
+          if (existingConnection) {
+            existingConnection.destroy();
+            activeVoiceConnections.delete(interaction.guild.id);
+            await interaction.reply({ content: '👋 تم فصل وخروج البوت من الروم الصوتي بنجاح.' });
+          } else {
+            await interaction.reply({ content: 'ℹ️ البوت ليس متصلاً بأي روم صوتي حالياً.', ephemeral: true });
+          }
+          return;
+        }
+
+        // /say
+        if (commandName === 'say') {
+          const messageText = interaction.options.getString('message', true);
+          await interaction.channel?.send(messageText);
+          await interaction.reply({ content: '✅ تم إرسال الرسالة بنجاح!', ephemeral: true });
+          ctx.addLog('say', `أمر /say: "${messageText.slice(0, 40)}"`, interaction.channelId, member.id);
+          return;
+        }
+
+        // /ping
+        if (commandName === 'ping') {
+          const ping = client.ws.ping;
+          await interaction.reply({ content: `🏓 Pong! سرعة الاستجابة: **${ping}ms**` });
+          return;
+        }
+      }
 
       // Handle Button Clicks
       if (interaction.isButton()) {
@@ -522,7 +803,20 @@ export function initDiscordBot(ctx: BotSharedContext, token?: string) {
         }
 
         const tempVcData = ctx.activeTempVCs[voiceChannel.id];
-        const isOwner = tempVcData?.ownerId === member.id;
+        let isOwner = tempVcData?.ownerId === member.id;
+        // Fallback owner recognition (e.g. if bot was restarted on hosting)
+        if (!isOwner) {
+          const memberName = member.displayName.toLowerCase();
+          const memberUser = member.user.username.toLowerCase();
+          const chanName = voiceChannel.name.toLowerCase();
+          if (chanName.includes(memberName) || chanName.includes(memberUser)) {
+            isOwner = true;
+            if (tempVcData) {
+              tempVcData.ownerId = member.id;
+              tempVcData.ownerName = member.displayName;
+            }
+          }
+        }
         const isAdmin = member.permissions.has(PermissionFlagsBits.Administrator) || member.id === ctx.config.ownerUserId;
 
         // 1. Lock
